@@ -1,0 +1,2 @@
+-- Yalnız yerli inkişaf üçün nümunə məlumatları burada əlavə edin.
+-- İstehsal mühitində bu faylı avtomatik işə salmayın.

@@ -1,0 +1,2 @@
+import { AuthForm } from "@/components/auth/auth-form";
+export default function ResetPage(){return <div className="w-full max-w-md"><p className="text-sm font-bold uppercase tracking-[.18em] text-indigo-600">Yeni şifrə</p><h2 className="mt-2 text-3xl font-bold tracking-tight">Şifrənizi yeniləyin</h2><p className="mt-2 text-sm leading-6 text-slate-500">Yeni şifrəniz ən azı 8 simvoldan ibarət olmalıdır.</p><AuthForm mode="reset"/></div>}
