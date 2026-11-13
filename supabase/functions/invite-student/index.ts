@@ -40,7 +40,7 @@ Deno.serve(async (request) => {
     return json({ error: "Giriş tələb olunur." }, 401);
   }
 
-  let payload: { studentId?: unknown };
+  let payload: { studentId?: unknown; password?: unknown };
   try {
     payload = await request.json();
   } catch {
@@ -72,43 +72,73 @@ Deno.serve(async (request) => {
     return json({ error: "Şagird tapılmadı." }, 404);
   }
   if (!student.email) {
-    return json({ error: "Dəvət üçün şagirdin e-poçtu olmalıdır." }, 400);
+    return json({ error: "Hesab üçün şagirdin e-poçtu olmalıdır." }, 400);
   }
   if (student.auth_user_id) {
-    return json({ ok: true, alreadyInvited: true });
+    return json({ ok: true, alreadyExists: true, message: "Şagird hesabı artıq mövcuddur." });
   }
 
-  const { data: invitation, error: invitationError } =
-    await admin.auth.admin.inviteUserByEmail(student.email, {
-      data: { full_name: student.full_name },
-      redirectTo: new URL(
-        "/auth/callback?next=/reset-password",
-        appUrl,
-      ).toString(),
-    });
+  let authUserId: string;
 
-  if (invitationError || !invitation.user) {
-    const duplicate = invitationError?.message
-      .toLocaleLowerCase("en")
-      .includes("already");
-    return json(
-      {
-        error: duplicate
-          ? "Bu e-poçtla Supabase istifadəçisi artıq mövcuddur."
-          : "Dəvət e-poçtu göndərilə bilmədi.",
-      },
-      duplicate ? 409 : 400,
-    );
+  if (typeof payload.password === "string" && payload.password.length >= 6) {
+    const { data: created, error: createError } =
+      await admin.auth.admin.createUser({
+        email: student.email,
+        password: payload.password,
+        email_confirm: true,
+        user_metadata: { full_name: student.full_name },
+      });
+
+    if (createError || !created.user) {
+      const duplicate = createError?.message
+        .toLocaleLowerCase("en")
+        .includes("already");
+      return json(
+        {
+          error: duplicate
+            ? "Bu e-poçtla istifadəçi artıq mövcuddur."
+            : `Şagird hesabı yaradıla bilmədi: ${createError?.message ?? ""}`,
+        },
+        duplicate ? 409 : 400,
+      );
+    }
+
+    authUserId = created.user.id;
+  } else {
+    const { data: invitation, error: invitationError } =
+      await admin.auth.admin.inviteUserByEmail(student.email, {
+        data: { full_name: student.full_name },
+        redirectTo: new URL(
+          "/auth/callback?next=/reset-password",
+          appUrl,
+        ).toString(),
+      });
+
+    if (invitationError || !invitation.user) {
+      const duplicate = invitationError?.message
+        .toLocaleLowerCase("en")
+        .includes("already");
+      return json(
+        {
+          error: duplicate
+            ? "Bu e-poçtla Supabase istifadəçisi artıq mövcuddur."
+            : "Dəvət e-poçtu göndərilə bilmədi.",
+        },
+        duplicate ? 409 : 400,
+      );
+    }
+
+    authUserId = invitation.user.id;
   }
 
   const { error: linkError } = await admin
     .from("students")
-    .update({ auth_user_id: invitation.user.id })
+    .update({ auth_user_id: authUserId })
     .eq("id", student.id)
     .eq("workspace_id", workspace.id);
 
   if (linkError) {
-    await admin.auth.admin.deleteUser(invitation.user.id);
+    await admin.auth.admin.deleteUser(authUserId);
     return json({ error: "Şagird hesabı profilə bağlana bilmədi." }, 500);
   }
 

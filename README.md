@@ -35,7 +35,7 @@ Bu sənəd həm developer, həm də layihəni davam etdirəcək AI agent üçün
 - Server-side rol yoxlaması və qorunan route-lar
 - Qrup yaratma və arxivləşdirmə
 - Şagird yaratma, qrupa qoşma və qrup dəyişmə tarixçəsi
-- Şagird üçün avtomatik Supabase Auth hesabı və e-poçt dəvəti
+- Şagird üçün birbaşa e-poçt və şifrə ilə Supabase Auth hesabı yaratma (e-poçt göndərişi tələb olunmur)
 - Şagirdi əlaqəli məlumatları və Supabase Auth hesabı ilə birlikdə silmə
 - Həftəlik dərs cədvəli və vaxt toqquşması yoxlaması
 - Sınaq yaratma və nəticələri toplu daxil etmə
@@ -121,19 +121,19 @@ Rol səlahiyyət üçün `profiles.role` və təhlükəsiz server yoxlamaları i
 - `src/lib/auth/session.ts`
 - `src/proxy.ts`
 
-## Şagird yaratma və dəvət axını
+## Şagird yaratma və hesab axını
 
-Müəllim `/dashboard/students?new=1` səhifəsində şagird məlumatlarını daxil edir. E-poçt məcburidir.
+Müəllim `/dashboard/students?new=1` səhifəsində şagirdin adını, qrupunu, e-poçtunu və ilkin şifrəsini daxil edir. E-poçt göndərişi (SMTP) tələb olunmur:
 
-1. `createStudent` Server Action məlumatı Zod ilə yoxlayır.
+1. `createStudent` Server Action məlumatı Zod ilə yoxlayır (`fullName`, `groupId`, `email`, `password >= 6`).
 2. Şagird müəllimin workspace-ində `public.students` cədvəlinə yazılır.
 3. `public.group_memberships` sətri yaradılır.
-4. Server Action istifadəçinin sessiyası ilə `invite-student` Edge Function-ı çağırır.
+4. Server Action istifadəçinin sessiyası ilə `invite-student` Edge Function-ı çağırır (`studentId` və `password` göndərilir).
 5. Edge Function JWT-ni və çağıranın həmin workspace-in müəllimi olduğunu yoxlayır.
-6. `admin.auth.admin.inviteUserByEmail` Supabase Auth istifadəçisini yaradır və birdəfəlik dəvət e-poçtu göndərir.
+6. `admin.auth.admin.createUser` ilə şagird üçün `email_confirm: true` ilə Auth istifadəçisi dərhal yaradılır (heç bir təsdiq e-poçtu göndərilmir).
 7. Auth trigger-i avtomatik `student` rolunda profil yaradır.
 8. Auth UUID `students.auth_user_id` sahəsinə bağlanır.
-9. Şagird dəvət linkindən keçərək şifrəsini təyin edir və şagird panelinə daxil olur.
+9. Müəllim şifrəni şagirdə birbaşa verir və şagird `/login` səhifəsindən dərhal daxil olur. Şifrə verilmədikdə fallback olaraq `inviteUserByEmail` ilə dəvət göndərilir.
 
 Təhlükəsizlik qərarı: service-role/secret açarı Next.js tətbiqinə və brauzerə verilmir. O yalnız Supabase Edge Function runtime-ında `SUPABASE_SERVICE_ROLE_KEY` kimi mövcuddur.
 
