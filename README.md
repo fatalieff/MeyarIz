@@ -37,7 +37,7 @@ Bu sənəd həm developer, həm də layihəni davam etdirəcək AI agent üçün
 - Şagird yaratma, qrupa qoşma və qrup dəyişmə tarixçəsi
 - Şagird üçün birbaşa e-poçt və şifrə ilə Supabase Auth hesabı yaratma (e-poçt göndərişi tələb olunmur)
 - Şagirdi əlaqəli məlumatları və Supabase Auth hesabı ilə birlikdə silmə
-- Həftəlik dərs cədvəli və vaxt toqquşması yoxlaması
+- Bir əməliyyatda həftənin bir neçə gününü seçmə imkanı olan dərs cədvəli və vaxt toqquşması yoxlaması
 - Sınaq yaratma və nəticələri toplu daxil etmə
 - `correct_answers / total_questions × 100` bal hesablaması
 - Qrup və ümumi reytinq
@@ -147,7 +147,7 @@ Hosted funksiyanın adı `invite-student`-dır və JWT yoxlaması aktivdir. Funk
 
 ## Şagird və Auth hesabının silinməsi
 
-Şagird profilindəki `Şagirdi sil` düyməsi geri qaytarılmayan əməliyyat üçün browser təsdiqi göstərir. Təsdiqdən sonra `deleteStudent` Server Action `delete-student` Edge Function-ı çağırır.
+Şagird profilindəki `Şagirdi sil` düyməsi və şagird siyahısındakı zibil qutusu əməliyyatı geri qaytarılmayan silmə üçün browser təsdiqi göstərir. Təsdiqdən sonra `deleteStudent` Server Action `delete-student` Edge Function-ı çağırır.
 
 Edge Function müəllim sessiyasını və workspace sahibliyini yenidən yoxlayır. Yalnız bundan sonra service-role üçün açıq olan `public.delete_student_account` database funksiyası bir transaction daxilində aşağıdakıları silir:
 
@@ -213,9 +213,10 @@ supabase/migrations/202611130001_initial_schema.sql
 supabase/migrations/20261113114230_secure_leaderboard.sql
 supabase/migrations/20261113114351_rls_policy_hardening.sql
 supabase/migrations/20261113121111_delete_student_account.sql
+supabase/migrations/20261114153428_fix_exam_rls_recursion.sql
 ```
 
-İkinci migrasiya leaderboard-u materiallaşdırılmış, RLS-qorunan modelə keçirir. Üçüncü migrasiya explicit `TO authenticated` və əlavə authorization sərtləşdirmələri tətbiq edir.
+İkinci migrasiya leaderboard-u materiallaşdırılmış, RLS-qorunan modelə keçirir. Üçüncü migrasiya explicit `TO authenticated` və əlavə authorization sərtləşdirmələri tətbiq edir. Son migrasiya `examinations` və `exam_results` policy-ləri arasındakı rekursiyanı RLS-dən yan keçən, amma çağıranın kimliyini daxilində yoxlayan `private` helper funksiyaları ilə aradan qaldırır.
 
 ## Lokal quraşdırma
 
@@ -269,7 +270,7 @@ Supabase Auth URL Configuration:
 ```text
 Site URL: http://localhost:3000
 Redirect URL: http://localhost:3000/auth/callback
-Redirect URL: http://localhost:3000/reset-password
+Şifrə bərpası PKCE axını ilə http://localhost:3000/auth/callback?next=/reset-password ünvanından keçir. Supabase Redirect URLs siyahısında http://localhost:3000/auth/callback saxlanılmalıdır.
 ```
 
 Production domeninin ekvivalent URL-lərini də allow-list-ə əlavə edin.
