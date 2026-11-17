@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { createExam, createGroup, createSchedule, createStudent, updateGroup, updateStudent } from "@/app/actions/teacher";
+import { createExam, createGroup, createSchedule, createStudent, updateGroup, updateSchedule, updateStudent } from "@/app/actions/teacher";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -122,4 +122,20 @@ export function ScheduleForm({ groups }: { groups: any[] }) {
       <Button disabled={pending || !selectedGroup || (scheduleType === "weekly" && selectedDays.length === 0)} className="sm:col-span-2">{pending ? "Əlavə edilir..." : !selectedGroup ? "Əvvəlcə qrup seçin" : scheduleType === "extra" ? "Əlavə dərsi yarat" : `${selectedDays.length || ""} ${selectedDays.length ? "gün üçün dərs vaxtlarını əlavə et" : "Dərs vaxtlarını əlavə et"}`}</Button>
     </form>
   );
+}
+
+export function ScheduleEditForm({ schedule }: { schedule: any }) {
+  const action = updateSchedule.bind(null, schedule.id);
+  const [state, formAction, pending] = useActionState(action, null);
+  const [startHour, startMinute] = schedule.start_time.slice(0, 5).split(":");
+  const [endHour, endMinute] = schedule.end_time.slice(0, 5).split(":");
+  return <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+    <div className="rounded-xl bg-slate-50 p-3 text-sm sm:col-span-2"><strong>{schedule.groups.name}</strong><span className="ml-2 text-slate-500">{schedule.is_extra ? "Əlavə dərs" : "Həftəlik dərs"}</span></div>
+    {schedule.is_extra && <div className={`${label} sm:col-span-2`}><span>Tarix</span><DatePicker name="sessionDate" defaultValue={schedule.session_date} ariaLabel="Əlavə dərsin yeni tarixi" /></div>}
+    <fieldset className="space-y-2"><legend className="text-xs font-semibold text-slate-500">Başlama</legend><div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><CustomSelect name="startHour" options={hours} defaultValue={startHour} ariaLabel="Başlama saatı"/><span className="font-bold text-slate-400">:</span><CustomSelect name="startMinute" options={minutes} defaultValue={startMinute} ariaLabel="Başlama dəqiqəsi"/></div></fieldset>
+    <fieldset className="space-y-2"><legend className="text-xs font-semibold text-slate-500">Bitmə</legend><div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><CustomSelect name="endHour" options={hours} defaultValue={endHour} ariaLabel="Bitmə saatı"/><span className="font-bold text-slate-400">:</span><CustomSelect name="endMinute" options={minutes} defaultValue={endMinute} ariaLabel="Bitmə dəqiqəsi"/></div></fieldset>
+    <label className={`${label} sm:col-span-2`}>Məkan<input className={field} name="location" defaultValue={schedule.location || ""} placeholder="İstəyə bağlı" /></label>
+    <div className="sm:col-span-2"><Message state={state}/></div>
+    <Button disabled={pending} className="sm:col-span-2">{pending ? "Yenilənir..." : "Dəyişikliyi yadda saxla və bildir"}</Button>
+  </form>;
 }

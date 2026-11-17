@@ -147,6 +147,12 @@ supabase/functions/invite-student/index.ts
 
 Hosted funksiyanın adı `invite-student`-dır və JWT yoxlaması aktivdir. Funksiya idempotentdir: şagird artıq Auth hesabına bağlıdırsa yeni dəvət yaratmır.
 
+## Realtime və cihaz bildirişləri
+
+Yeni dərs saatı, dərs vaxtı dəyişikliyi, əlavə dərs və sınaq nəticəsinin ilk açıqlanması qrup şagirdləri üçün `notifications` sətri yaradır. Açıq saytda Supabase Realtime bu sətirləri dərhal navbar bildiriş mərkəzinə gətirir. Şagird “Cihaz bildirişlərini aktiv et” düyməsi ilə icazə verdikdən sonra `public/sw.js` service worker-i saytdan kənarda da Web Push bildirişi göstərir.
+
+Production mühitində sayt HTTPS üzərindən işləməli və `.env.local`-dakı eyni VAPID cütü hostinqin environment dəyişənlərinə əlavə edilməlidir. VAPID açarlarını dəyişmək mövcud cihaz abunəliklərinin yenidən aktivləşdirilməsini tələb edir.
+
 ## Şagird və Auth hesabının silinməsi
 
 Şagird profilindəki `Şagirdi sil` düyməsi və şagird siyahısındakı zibil qutusu əməliyyatı geri qaytarılmayan silmə üçün browser təsdiqi göstərir. Təsdiqdən sonra `deleteStudent` Server Action `delete-student` Edge Function-ı çağırır.
@@ -247,12 +253,16 @@ Next.js `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:admin@example.com
 ```
 
 Qaydalar:
 
 - `.env.local` commit edilməməlidir.
 - Secret və service-role açarına `NEXT_PUBLIC_` prefiksi vermək qadağandır.
+- `VAPID_PRIVATE_KEY` yalnız serverdə saxlanılır; brauzerə yalnız public VAPID açarı verilir.
 - Next.js tətbiqinin `SUPABASE_SERVICE_ROLE_KEY` dəyişəninə ehtiyacı yoxdur.
 - `SUPABASE_SERVICE_ROLE_KEY` Supabase tərəfindən Edge Function runtime-ına avtomatik verilir.
 - Production `APP_URL` Edge Function secret-i kimi konfiqurasiya olunur; Next.js env dəyişəni deyil.

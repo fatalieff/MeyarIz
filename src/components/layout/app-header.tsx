@@ -5,6 +5,7 @@ import { UserMenu } from "@/components/layout/user-menu";
 import { MeyarIzLogo } from "@/components/ui/meyariz-logo";
 import { NavigationLayoutMenu } from "@/components/layout/navigation-layout-menu";
 import { HorizontalNavigation } from "@/components/layout/horizontal-navigation";
+import { NotificationCenter } from "@/components/notifications/notification-center";
 
 export async function AppHeader({title,role="teacher"}:{title:string;userName?:string;role?:"teacher"|"student"}){
   const profile=await getSessionProfile();
@@ -16,6 +17,7 @@ export async function AppHeader({title,role="teacher"}:{title:string;userName?:s
       <div className="min-w-0 flex-1"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-indigo-600">MeyarİZ</p><h1 className="mt-0.5 truncate text-lg font-bold tracking-[-.025em] text-slate-950">{title}</h1></div>
       <NavigationLayoutMenu/>
       {role==="teacher"&&<Link href="/dashboard/students?new=1" className="hidden items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-colors sm:flex"><Plus className="size-4"/>Şagird əlavə et</Link>}
+      {role==="student"&&<NotificationCenter/>}
       <UserMenu userName={userName} role={role}/>
     </div>
     <HorizontalNavigation role={role}/>
