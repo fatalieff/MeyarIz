@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { BarChart3,CalendarDays,ClipboardCheck,GraduationCap,LayoutDashboard,Medal,Settings,Users,Sigma,Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ export function Sidebar({role="teacher"}:{role?:"teacher"|"student"}){
       <div className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-indigo-600/20 blur-3xl"/>
       <div className="pointer-events-none absolute -bottom-32 -right-28 size-72 rounded-full bg-cyan-500/10 blur-3xl"/>
       <Link href={role==="teacher"?"/dashboard":"/student/dashboard"} className="relative mb-7 flex items-center gap-3 rounded-2xl px-3 py-2">
-        <span className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 shadow-[0_12px_30px_rgba(79,70,229,.35)]"><Sigma className="size-5"/></span>
+        <span className="relative block size-11 overflow-hidden rounded-2xl bg-black shadow-[0_12px_30px_rgba(79,70,229,.25)] ring-1 ring-white/10"><Image src="/mathrank-logo.png" alt="" fill sizes="44px" className="object-cover"/></span>
         <span><strong className="block text-[19px] tracking-[-.03em]">MathRank</strong><small className="flex items-center gap-1 text-[10px] uppercase tracking-[.2em] text-slate-400"><Sparkles className="size-2.5"/>ağıllı inkişaf</small></span>
       </Link>
       <div className="relative mb-3 px-3 text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">Menyu</div>

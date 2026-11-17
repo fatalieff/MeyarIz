@@ -1,22 +1,27 @@
-import { BarChart3,CheckCircle2,Sigma,Sparkles,TrendingUp } from "lucide-react";
+import Image from "next/image";
 
-export default function AuthLayout({children}:{children:React.ReactNode}){
-  return <main className="grid min-h-screen bg-[#f7f8fc] lg:grid-cols-[1.08fr_.92fr]">
-    <section className="relative hidden overflow-hidden bg-[#090e1c] p-12 text-white lg:flex lg:flex-col">
-      <div className="absolute -left-32 -top-32 size-[34rem] rounded-full bg-indigo-600/25 blur-3xl"/>
-      <div className="absolute -bottom-48 -right-32 size-[38rem] rounded-full bg-cyan-500/15 blur-3xl"/>
-      <div className="absolute inset-0 opacity-[.05] [background-image:linear-gradient(rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.2)_1px,transparent_1px)] [background-size:48px_48px]"/>
-      <div className="relative flex items-center gap-3"><span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 shadow-[0_16px_36px_rgba(79,70,229,.4)]"><Sigma/></span><div><strong className="block text-xl tracking-tight">MathRank</strong><span className="text-[10px] uppercase tracking-[.22em] text-slate-400">ağıllı inkişaf</span></div></div>
-      <div className="relative my-auto max-w-2xl">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3 py-1.5 text-xs font-semibold text-indigo-200"><Sparkles className="size-3.5"/>Müəllimlər üçün premium idarəetmə</div>
-        <h1 className="max-w-xl text-5xl font-bold leading-[1.06] tracking-[-.045em]">Nəticələri sadəcə qeyd etməyin. İnkişafı görünən edin.</h1>
-        <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">Qruplar, dərs cədvəli, sınaqlar və şagird performansı — bir fokuslu və zərif iş məkanında.</p>
-        <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
-          {[["Aydın analitika",BarChart3],["Canlı inkişaf",TrendingUp],["Təhlükəsiz məlumat",CheckCircle2]].map(([label,Icon])=><div key={label as string} className="rounded-2xl border border-white/[.08] bg-white/[.045] p-4 backdrop-blur"><Icon className="mb-3 size-5 text-indigo-300"/><p className="text-sm font-semibold text-slate-200">{label as string}</p></div>)}
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f6f7fb] px-5 py-10 sm:px-8">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-300/70 to-transparent" />
+      <div className="absolute left-1/2 top-[-18rem] size-[34rem] -translate-x-1/2 rounded-full bg-indigo-200/30 blur-[100px]" />
+      <div className="absolute bottom-[-14rem] right-[-10rem] size-[28rem] rounded-full bg-violet-200/20 blur-[110px]" />
+
+      <div className="relative w-full max-w-[28rem]">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <span className="relative block size-16 overflow-hidden rounded-[1.15rem] bg-black shadow-[0_12px_30px_rgba(17,22,42,.2)] ring-1 ring-white/10">
+            <Image src="/mathrank-logo.png" alt="MathRank loqosu" fill priority sizes="64px" className="object-cover" />
+          </span>
+          <strong className="mt-3 text-lg tracking-[-.035em] text-slate-950">MathRank</strong>
+          <span className="mt-1 text-[9px] font-bold uppercase tracking-[.24em] text-slate-400">ağıllı inkişaf</span>
         </div>
+
+        <div className="rounded-[1.75rem] border border-white bg-white/85 p-6 shadow-[0_24px_70px_rgba(31,38,72,.09)] ring-1 ring-slate-900/[.025] backdrop-blur-xl sm:p-9">
+          {children}
+        </div>
+
+        <p className="mt-6 text-center text-[11px] text-slate-400">© 2026 MathRank · Təhlükəsiz giriş</p>
       </div>
-      <p className="relative text-xs uppercase tracking-[.18em] text-slate-500">Peşəkar riyaziyyat müəllimləri üçün hazırlanıb</p>
-    </section>
-    <section className="relative grid place-items-center overflow-hidden px-6 py-12"><div className="absolute -right-28 -top-28 size-80 rounded-full bg-indigo-200/30 blur-3xl"/><div className="relative w-full max-w-md rounded-[2rem] border border-white bg-white/82 p-7 shadow-[0_30px_80px_rgba(31,38,72,.12)] backdrop-blur-xl sm:p-9">{children}</div></section>
-  </main>;
+    </main>
+  );
 }
