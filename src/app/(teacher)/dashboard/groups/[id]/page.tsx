@@ -7,6 +7,7 @@ import { GroupEditForm } from "@/components/forms/entity-forms";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FormPanel } from "@/components/ui/form-panel";
+import { DeleteGroupButton } from "@/components/groups/delete-group-button";
 import { getGroup } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
 import { azDate, azPercent } from "@/lib/utils";
@@ -41,9 +42,12 @@ export default async function GroupDetail({
               {group.preparation_level && <p className="mt-2 text-xs font-semibold text-indigo-600">Hazırlıq səviyyəsi: {group.preparation_level}</p>}
             </div>
           </div>
-          <Link href={query.edit ? `/dashboard/groups/${group.id}` : `/dashboard/groups/${group.id}?edit=1`} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-200 hover:text-indigo-700">
-            {query.edit ? <><X className="size-4" />Bağla</> : <><Pencil className="size-4" />Redaktə et</>}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2 self-start">
+            <Link href={query.edit ? `/dashboard/groups/${group.id}` : `/dashboard/groups/${group.id}?edit=1`} className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-200 hover:text-indigo-700">
+              {query.edit ? <><X className="size-4" />Bağla</> : <><Pencil className="size-4" />Redaktə et</>}
+            </Link>
+            <DeleteGroupButton groupId={group.id} groupName={group.name} />
+          </div>
         </div>
 
         {query.edit && <FormPanel title="Qrup məlumatlarını redaktə et"><GroupEditForm group={group} /></FormPanel>}

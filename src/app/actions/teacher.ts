@@ -13,6 +13,58 @@ export async function updateTeacherProfile(_:unknown,formData:FormData):Promise<
 export async function createGroup(_:unknown,formData:FormData):Promise<Result>{try{const input=groupSchema.parse(Object.fromEntries(formData));const{supabase,workspaceId}=await context();const{error}=await supabase.from("groups").insert({workspace_id:workspaceId,name:input.name,description:input.description||null,preparation_level:input.preparationLevel||null,color:input.color});if(error)throw new Error(error.code==="23505"?"Bu adda qrup artıq mövcuddur.":"Qrup yaradıla bilmədi.");revalidatePath("/dashboard/groups");return{ok:true};}catch(e){return{error:friendly(e)}}}
 export async function updateGroup(groupId:string,_:unknown,formData:FormData):Promise<Result>{try{const id=groupIdSchema.parse(groupId);const input=groupSchema.parse(Object.fromEntries(formData));const{supabase,workspaceId}=await context();const{data,error}=await supabase.from("groups").update({name:input.name,description:input.description||null,preparation_level:input.preparationLevel||null,color:input.color}).eq("id",id).eq("workspace_id",workspaceId).select("id").single();if(error||!data)throw new Error(error?.code==="23505"?"Bu adda qrup artıq mövcuddur.":"Qrup məlumatları yenilənə bilmədi.");revalidatePath("/dashboard/groups");revalidatePath(`/dashboard/groups/${id}`);revalidatePath("/dashboard/students");revalidatePath("/dashboard/schedule");revalidatePath("/dashboard/exams");revalidatePath("/dashboard/rankings");revalidatePath("/dashboard");revalidatePath("/student/dashboard");revalidatePath("/student/schedule");return{ok:true,message:"Qrup məlumatları uğurla yeniləndi."};}catch(e){return{error:friendly(e)}}}
 export async function updateGroupStatus(id:string,status:"active"|"archived"){const{supabase}=await context();await supabase.from("groups").update({status}).eq("id",id);revalidatePath("/dashboard/groups");}
+export async function deleteGroup(_:unknown,formData:FormData):Promise<Result>{
+  try{
+    const groupId=groupIdSchema.parse(String(formData.get("groupId")||""));
+    const{supabase,workspaceId}=await context();
+
+    const{data:group,error:groupError}=await supabase
+      .from("groups")
+      .select("id, name")
+      .eq("id",groupId)
+      .eq("workspace_id",workspaceId)
+      .maybeSingle();
+
+    if(groupError||!group) throw new Error("Qrup tapılmadı və ya silinmə icazəsi yoxdur.");
+
+    // 1. Qrupa aid sınaqları və əlaqəli nəticələri təmizlə
+    const{data:exams}=await supabase
+      .from("examinations")
+      .select("id")
+      .eq("group_id",groupId);
+
+    const examIds=(exams||[]).map((e:any)=>e.id);
+    if(examIds.length>0){
+      await supabase.from("student_achievements").delete().in("examination_id",examIds);
+      await supabase.from("exam_results").delete().in("examination_id",examIds);
+      await supabase.from("examinations").delete().in("id",examIds);
+    }
+
+    // 2. Qrup üzvlüklərini və dərs cədvəllərini sil
+    await supabase.from("group_memberships").delete().eq("group_id",groupId);
+    await supabase.from("group_schedules").delete().eq("group_id",groupId);
+
+    // 3. Qrupun özünü sil
+    const{error:delError}=await supabase
+      .from("groups")
+      .delete()
+      .eq("id",groupId)
+      .eq("workspace_id",workspaceId);
+
+    if(delError) throw new Error("Qrup silinərkən xəta baş verdi: "+delError.message);
+  }catch(e){
+    return{error:friendly(e)};
+  }
+
+  revalidatePath("/dashboard/groups");
+  revalidatePath("/dashboard/students");
+  revalidatePath("/dashboard/schedule");
+  revalidatePath("/dashboard/exams");
+  revalidatePath("/dashboard/rankings");
+  revalidatePath("/dashboard/analytics");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/groups");
+}
 export async function createStudent(_:unknown,formData:FormData):Promise<Result>{try{const input=studentSchema.parse(Object.fromEntries(formData));const{supabase,workspaceId}=await context();const{data:student,error}=await supabase.from("students").insert({workspace_id:workspaceId,full_name:input.fullName,email:input.email,phone:input.phone||null,preparation_level:input.preparationLevel||null,private_notes:input.privateNotes||null}).select("id").single();if(error||!student)throw new Error(error?.code==="23505"?"Bu e-poçtla şagird artıq mövcuddur.":"Şagird yaradıla bilmədi.");const{error:memberError}=await supabase.from("group_memberships").insert({student_id:student.id,group_id:input.groupId});if(memberError)throw new Error("Şagird yaradıldı, lakin qrupa qoşulmadı.");const warnings:string[]=[];const contacts=parentContacts(student.id,input).filter(contact=>contact.full_name||contact.phone);if(contacts.length){const{error:contactError}=await supabase.from("parent_contacts").insert(contacts);if(contactError)warnings.push("Valideyn əlaqələri saxlanılmadı.");}const{data:fnData,error:inviteError}=await supabase.functions.invoke("invite-student",{body:{studentId:student.id,password:input.password}});if(inviteError||(fnData&&!fnData.ok))warnings.push((fnData as any)?.error||"Giriş hesabı aktivləşdirilə bilmədi.");revalidatePath("/dashboard/students");revalidatePath(`/dashboard/students/${student.id}`);if(warnings.length)return{ok:true,warning:`Şagird əlavə edildi, lakin ${warnings.join(" ")}`};return{ok:true,message:"Şagird, valideyn əlaqələri və giriş hesabı uğurla yaradıldı."};}catch(e){return{error:friendly(e)}}}
 export async function updateStudent(studentId:string,_:unknown,formData:FormData):Promise<Result>{try{const id=studentIdSchema.parse(studentId);const input=studentUpdateSchema.parse(Object.fromEntries(formData));const{supabase,workspaceId}=await context();const[{data:student},{data:group}]=await Promise.all([supabase.from("students").select("id").eq("id",id).eq("workspace_id",workspaceId).maybeSingle(),supabase.from("groups").select("id").eq("id",input.groupId).eq("workspace_id",workspaceId).eq("status","active").maybeSingle()]);if(!student)throw new Error("Şagird tapılmadı.");if(!group)throw new Error("Seçilmiş qrup tapılmadı və ya aktiv deyil.");const{data:updated,error}=await supabase.from("students").update({full_name:input.fullName,phone:input.phone||null,preparation_level:input.preparationLevel||null,private_notes:input.privateNotes||null}).eq("id",id).eq("workspace_id",workspaceId).select("id").single();if(error||!updated)throw new Error("Şagird məlumatları yenilənə bilmədi.");const{data:membership}=await supabase.from("group_memberships").select("id,group_id").eq("student_id",id).eq("active",true).maybeSingle();if(membership?.group_id!==input.groupId){const today=new Date().toISOString().slice(0,10);if(membership){const{error:leaveError}=await supabase.from("group_memberships").update({active:false,left_at:today}).eq("id",membership.id);if(leaveError)throw new Error("Şagirdin əvvəlki qrup məlumatı yenilənə bilmədi.");}const{error:joinError}=await supabase.from("group_memberships").insert({student_id:id,group_id:input.groupId,joined_at:today});if(joinError)throw new Error("Şagird məlumatları yeniləndi, lakin yeni qrupa keçirilmədi.");}for(const contact of parentContacts(id,input)){const{error:contactError}=contact.full_name||contact.phone?await supabase.from("parent_contacts").upsert(contact,{onConflict:"student_id,contact_type"}):await supabase.from("parent_contacts").delete().eq("student_id",id).eq("contact_type",contact.contact_type);if(contactError)throw new Error("Şagird məlumatları yeniləndi, lakin valideyn əlaqələri saxlanılmadı.");}revalidatePath("/dashboard/students");revalidatePath(`/dashboard/students/${id}`);revalidatePath("/dashboard/groups");revalidatePath("/dashboard/rankings");revalidatePath("/dashboard/analytics");revalidatePath("/dashboard");revalidatePath("/student/profile");revalidatePath("/student/dashboard");return{ok:true,message:"Şagird və valideyn məlumatları uğurla yeniləndi."};}catch(e){return{error:friendly(e)}}}
 export async function deleteStudent(_:unknown,formData:FormData):Promise<Result>{try{const studentId=studentIdSchema.parse(String(formData.get("studentId")||""));const{supabase}=await context();const{data,error}=await supabase.functions.invoke("delete-student",{body:{studentId}});if(error)throw new Error("Şagird və giriş hesabı silinə bilmədi.");if(!data?.ok)throw new Error(typeof data?.error==="string"?data.error:"Şagird və giriş hesabı silinə bilmədi.");}catch(e){return{error:friendly(e)}}revalidatePath("/dashboard/students");revalidatePath("/dashboard/rankings");revalidatePath("/dashboard/analytics");revalidatePath("/dashboard");redirect("/dashboard/students");}
