@@ -22,3 +22,40 @@ export const scheduleSchema=z.object({ groupId:z.string().uuid("Əvvəlcə qrup 
   if(!timeSchema.safeParse(input.endTime).success)ctx.addIssue({code:"custom",message:"Bitmə saatını tam seçin.",path:["endTime"]});
   if(timeSchema.safeParse(input.startTime).success&&timeSchema.safeParse(input.endTime).success&&input.endTime<=input.startTime)ctx.addIssue({code:"custom",message:"Bitmə vaxtı başlama vaxtından sonra olmalıdır.",path:["endTime"]});
 });
+
+export const createTeacherSchema = z.object({
+  fullName: z.string().trim().min(3, "Ad və soyad ən azı 3 simvol olmalıdır.").max(100, "Ad və soyad 100 simvoldan çox ola bilməz."),
+  email: z.string().trim().toLowerCase().email("Düzgün e-poçt ünvanı daxil edin."),
+  workspaceName: z.string().trim().min(2, "İş sahəsi / kurs adı ən azı 2 simvol olmalıdır.").max(100, "İş sahəsi adı 100 simvoldan çox ola bilməz."),
+  password: z.string().min(8, "Müvəqqəti şifrə ən azı 8 simvol olmalıdır.").max(72, "Şifrə 72 simvoldan çox ola bilməz."),
+  confirmPassword: z.string().min(1, "Şifrə təkrarını daxil edin."),
+  status: z.enum(["active", "suspended"]).default("active"),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Şifrə və şifrə təkrarı eyni olmalıdır.",
+  path: ["confirmPassword"],
+});
+
+export const updateTeacherSchema = z.object({
+  teacherId: z.string().uuid("Müəllim identifikatoru düzgün deyil."),
+  fullName: z.string().trim().min(3, "Ad və soyad ən azı 3 simvol olmalıdır.").max(100, "Ad və soyad 100 simvoldan çox ola bilməz."),
+  workspaceName: z.string().trim().min(2, "İş sahəsi adı ən azı 2 simvol olmalıdır.").max(100, "İş sahəsi adı 100 simvoldan çox ola bilməz."),
+});
+
+export const resetTeacherPasswordSchema = z.object({
+  teacherId: z.string().uuid("Müəllim identifikatoru düzgün deyil."),
+  password: z.string().min(8, "Müvəqqəti şifrə ən azı 8 simvol olmalıdır.").max(72, "Şifrə 72 simvoldan çox ola bilməz."),
+  confirmPassword: z.string().min(1, "Şifrə təkrarını daxil edin."),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Şifrə və şifrə təkrarı eyni olmalıdır.",
+  path: ["confirmPassword"],
+});
+
+export const toggleTeacherStatusSchema = z.object({
+  teacherId: z.string().uuid("Müəllim identifikatoru düzgün deyil."),
+  status: z.enum(["active", "suspended"]),
+});
+
+export const deleteTeacherSchema = z.object({
+  teacherId: z.string().uuid("Müəllim identifikatoru düzgün deyil."),
+  confirmation: z.string().trim().min(1, "Təsdiq mətnini daxil edin."),
+});

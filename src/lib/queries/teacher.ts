@@ -5,7 +5,17 @@ import { isScheduleVisible } from "@/lib/calculations/schedules";
 async function workspace(){await connection();const supabase=await createClient();if(!supabase)return null;const{data:{user}}=await supabase.auth.getUser();if(!user)return null;const{data:ws}=await supabase.from("teacher_workspaces").select("id,name,birthday_welcome_completed").eq("owner_id",user.id).single();return ws?{supabase,ws}:null;}
 export async function getTeacherProfileSettings(){await connection();const supabase=await createClient();if(!supabase)return null;const{data:{user}}=await supabase.auth.getUser();if(!user)return null;const[{data:profile,error:profileError},{data:workspace,error:workspaceError}]=await Promise.all([supabase.from("profiles").select("full_name").eq("id",user.id).single(),supabase.from("teacher_workspaces").select("name").eq("owner_id",user.id).single()]);if(profileError||workspaceError||!profile||!workspace)return null;return{fullName:profile.full_name,workspaceName:workspace.name};}
 export async function getGroups(){const ctx=await workspace();if(!ctx)return[];const{data}=await ctx.supabase.from("groups").select("id,name,description,preparation_level,color,status,group_schedules(id,weekday,start_time,end_time,is_extra,session_date),group_memberships(count)").eq("workspace_id",ctx.ws.id).order("created_at",{ascending:false});return(data||[]).map((group:any)=>({...group,group_schedules:(group.group_schedules||[]).filter((schedule:any)=>isScheduleVisible(schedule))}));}
-export async function getStudents(){const ctx=await workspace();if(!ctx)return[];const{data}=await ctx.supabase.from("students").select("id,full_name,email,phone,status,auth_user_id,preparation_level,group_memberships!inner(active,groups(id,name,color))").eq("workspace_id",ctx.ws.id).eq("group_memberships.active",true).order("full_name");return data||[];}
+export async function getStudents(){
+  const ctx=await workspace();
+  if(!ctx)return[];
+  const{data}=await ctx.supabase
+    .from("students")
+    .select("id,full_name,email,phone,status,auth_user_id,preparation_level,profiles:auth_user_id(role),group_memberships!inner(active,groups(id,name,color))")
+    .eq("workspace_id",ctx.ws.id)
+    .eq("group_memberships.active",true)
+    .order("full_name");
+  return (data||[]).filter((s:any)=>!s.profiles || s.profiles.role !== "admin");
+}
 export async function getExams(){const ctx=await workspace();if(!ctx)return[];const{data}=await ctx.supabase.from("examinations").select("id,title,exam_date,total_questions,status,groups!inner(id,name,workspace_id,color),exam_results(normalized_score)").eq("groups.workspace_id",ctx.ws.id).order("exam_date",{ascending:false});return data||[];}
 export async function getSchedules(){const ctx=await workspace();if(!ctx)return[];const{data}=await ctx.supabase.from("group_schedules").select("id,weekday,start_time,end_time,location,is_extra,session_date,groups!inner(id,name,color,workspace_id,group_memberships(count))").eq("groups.workspace_id",ctx.ws.id).order("weekday").order("start_time");return(data||[]).filter((schedule:any)=>isScheduleVisible(schedule));}
 export async function getDashboard(){const ctx=await workspace();if(!ctx)return{configured:false,workspace:null,students:0,groups:0,exams:0,average:null,results:[],recentExams:[],schedules:[],leaders:[]};const [groups,students,exams,results,schedules,leaders]=await Promise.all([
