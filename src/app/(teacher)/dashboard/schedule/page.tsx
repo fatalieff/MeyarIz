@@ -10,6 +10,8 @@ import { weekDays } from "@/lib/calculations/schedules";
 import { azDate } from "@/lib/utils";
 import { ScheduleExpiryRefresh } from "@/components/schedules/schedule-expiry-refresh";
 
+export const instant = false;
+
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ new?: string; edit?: string }> }) {
   const [schedules, groups, params] = await Promise.all([getSchedules(), getGroups(), searchParams]);
   const weekdayKey = new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "Asia/Baku" }).format(new Date());

@@ -12,6 +12,8 @@ import { getGroups, getStudent } from "@/lib/queries/teacher";
 import { azDate, azMonthShort, azPercent, normalizeAzPhone } from "@/lib/utils";
 import { performanceTrend } from "@/lib/calculations/scoring";
 
+export const instant = false;
+
 export default async function StudentDetail({
   params,
   searchParams,

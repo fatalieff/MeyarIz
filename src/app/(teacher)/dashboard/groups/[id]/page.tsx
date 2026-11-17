@@ -12,6 +12,8 @@ import { getGroup } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
 import { azDate, azPercent } from "@/lib/utils";
 
+export const instant = false;
+
 export default async function GroupDetail({
   params,
   searchParams,

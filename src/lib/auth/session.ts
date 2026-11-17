@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export type AppUserRole = "admin" | "teacher" | "student";
@@ -23,6 +24,7 @@ export function roleHomePath(role: AppUserRole): string {
 }
 
 export async function getSessionProfile(): Promise<SessionProfile | null> {
+  await connection();
   const supabase = await createClient();
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
@@ -43,6 +45,7 @@ export async function getSessionProfile(): Promise<SessionProfile | null> {
 }
 
 export async function requireRole(role: AppUserRole): Promise<SessionProfile> {
+  await connection();
   const profile = await getSessionProfile();
   if (!profile) {
     redirect("/login");

@@ -8,6 +8,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ExamBrowser } from "@/components/exams/exam-browser";
 import { getExams, getGroups } from "@/lib/queries/teacher";
 
+export const instant = false;
+
 export default async function ExamsPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
   const [exams, groups, params] = await Promise.all([getExams(), getGroups(), searchParams]);
   return <><AppHeader title="Sınaqlar"/><main className="p-5 md:p-8">

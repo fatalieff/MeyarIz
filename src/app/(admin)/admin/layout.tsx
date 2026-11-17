@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { requireRole } from "@/lib/auth/session";
 
@@ -8,6 +9,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
     await requireRole("admin");
   }
