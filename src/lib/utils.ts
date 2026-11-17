@@ -1,9 +1,37 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+const AZ_MONTHS_LONG = [
+  "yanvar", "fevral", "mart", "aprel", "may", "iyun",
+  "iyul", "avqust", "sentyabr", "oktyabr", "noyabr", "dekabr"
+];
+
+const AZ_MONTHS_SHORT = [
+  "yan", "fev", "mar", "apr", "may", "iyn",
+  "iyl", "avq", "sen", "okt", "noy", "dek"
+];
+
+function parseDate(value: string | Date): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(value);
+}
+
 export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 export const azPercent = (value: number | null | undefined) => value == null ? "—" : `${new Intl.NumberFormat("az-AZ", { maximumFractionDigits: 1 }).format(value)}%`;
-export const azDate = (value: string | Date) => new Intl.DateTimeFormat("az-AZ", { day:"2-digit", month:"long", year:"numeric", timeZone:"Asia/Baku" }).format(new Date(value));
+export const azDate = (value: string | Date) => {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${AZ_MONTHS_LONG[date.getMonth()]} ${date.getFullYear()}`;
+};
+export const azMonthShort = (value: string | Date) => {
+  const date = parseDate(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return AZ_MONTHS_SHORT[date.getMonth()] || "";
+};
 export function normalizeAzPhone(value: string) {
   const digits = value.replace(/\D/g, "");
   if (digits.length === 9) return `994${digits}`;

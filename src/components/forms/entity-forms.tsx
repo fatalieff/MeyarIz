@@ -68,6 +68,7 @@ export function ScheduleForm({ groups }: { groups: any[] }) {
   const [state, action, pending] = useActionState(createSchedule, null);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [selectedGroup, setSelectedGroup] = useState("");
+  const [scheduleType, setScheduleType] = useState<"weekly" | "extra">("weekly");
   const dayNames = ["Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə", "Bazar"];
 
   const toggleDay = (weekday: number, checked: boolean) => {
@@ -77,7 +78,18 @@ export function ScheduleForm({ groups }: { groups: any[] }) {
   return (
     <form action={action} className="grid gap-5 sm:grid-cols-2">
       <div className={`${label} sm:col-span-2`}><span>Qrup</span><CustomSelect name="groupId" options={groupOptions(groups)} placeholder="Qrup seçin" ariaLabel="Dərs qrupu" required onValueChange={setSelectedGroup} /></div>
-      <fieldset className="space-y-3 sm:col-span-2">
+      <fieldset className="sm:col-span-2">
+        <legend className="text-sm font-semibold text-slate-700">Dərs növü</legend>
+        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+          <label className={`cursor-pointer rounded-2xl border p-4 transition ${scheduleType === "weekly" ? "border-indigo-300 bg-indigo-50 ring-2 ring-indigo-100" : "bg-white hover:border-slate-300"}`}>
+            <span className="flex items-start gap-3"><input className="mt-1 size-4 accent-indigo-600" type="radio" name="scheduleType" value="weekly" checked={scheduleType === "weekly"} onChange={() => setScheduleType("weekly")} /><span><strong className="block text-sm text-slate-800">Həftəlik dərs</strong><span className="mt-1 block text-xs font-normal text-slate-500">Seçilən günlərdə hər həftə təkrarlanır.</span></span></span>
+          </label>
+          <label className={`cursor-pointer rounded-2xl border p-4 transition ${scheduleType === "extra" ? "border-amber-300 bg-amber-50 ring-2 ring-amber-100" : "bg-white hover:border-slate-300"}`}>
+            <span className="flex items-start gap-3"><input className="mt-1 size-4 accent-amber-600" type="radio" name="scheduleType" value="extra" checked={scheduleType === "extra"} onChange={() => setScheduleType("extra")} /><span><strong className="block text-sm text-slate-800">Əlavə dərs</strong><span className="mt-1 block text-xs font-normal text-slate-500">Bir dəfə keçirilir və vaxtı bitəndə cədvəldən avtomatik çıxır.</span></span></span>
+          </label>
+        </div>
+      </fieldset>
+      {scheduleType === "weekly" ? <fieldset className="space-y-3 sm:col-span-2">
         <legend className="text-sm font-semibold text-slate-700">Günlər və saatlar</legend>
         <p className="-mt-2 text-xs text-slate-500">Hər günü seçin və həmin günə uyğun dərs saatını ayrıca təyin edin.</p>
         <div className="grid gap-3 lg:grid-cols-2">
@@ -95,11 +107,19 @@ export function ScheduleForm({ groups }: { groups: any[] }) {
             );
           })}
         </div>
-      </fieldset>
+      </fieldset> : <fieldset className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/50 p-4 sm:col-span-2">
+        <legend className="px-2 text-sm font-semibold text-amber-900">Əlavə dərsin tarixi və saatı</legend>
+        <p className="text-xs text-amber-800/80">Dərs bitənə qədər müəllim və qrup şagirdlərinin cədvəlində görünəcək.</p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className={label}><span>Tarix</span><DatePicker name="sessionDate" ariaLabel="Əlavə dərsin tarixi" /></div>
+          <DayTimeField weekday={0} labelText="Başlama" prefix="start" />
+          <DayTimeField weekday={0} labelText="Bitmə" prefix="end" />
+        </div>
+      </fieldset>}
       <label className={`${label} sm:col-span-2`}>Məkan<input className={field} name="location" placeholder="İstəyə bağlı" /></label>
       <label className="flex items-center gap-2 text-sm text-slate-600 sm:col-span-2"><input className="size-4 accent-indigo-600" type="checkbox" name="allowConflict" value="true" />Məlum vaxt toqquşmasına qəsdən icazə ver</label>
       <div className="sm:col-span-2"><Message state={state} /></div>
-      <Button disabled={pending || !selectedGroup || selectedDays.length === 0} className="sm:col-span-2">{pending ? "Əlavə edilir..." : !selectedGroup ? "Əvvəlcə qrup seçin" : `${selectedDays.length || ""} ${selectedDays.length ? "gün üçün dərs vaxtlarını əlavə et" : "Dərs vaxtlarını əlavə et"}`}</Button>
+      <Button disabled={pending || !selectedGroup || (scheduleType === "weekly" && selectedDays.length === 0)} className="sm:col-span-2">{pending ? "Əlavə edilir..." : !selectedGroup ? "Əvvəlcə qrup seçin" : scheduleType === "extra" ? "Əlavə dərsi yarat" : `${selectedDays.length || ""} ${selectedDays.length ? "gün üçün dərs vaxtlarını əlavə et" : "Dərs vaxtlarını əlavə et"}`}</Button>
     </form>
   );
 }

@@ -1,2 +1,18 @@
-import Link from "next/link"; import { Calendar,ChevronRight,ClipboardCheck,Plus } from "lucide-react"; import { AppHeader } from "@/components/layout/app-header"; import { PageHeader } from "@/components/ui/page-header"; import { FormPanel } from "@/components/ui/form-panel"; import { ExamForm } from "@/components/forms/entity-forms"; import { EmptyState } from "@/components/ui/empty-state"; import { getExams,getGroups } from "@/lib/queries/teacher"; import { azDate,azPercent } from "@/lib/utils";
-export default async function ExamsPage({searchParams}:{searchParams:Promise<{new?:string}>}){const[exams,groups,params]=await Promise.all([getExams(),getGroups(),searchParams]);return <><AppHeader title="Sınaqlar"/><main className="p-5 md:p-8"><PageHeader eyebrow="Nəticələrin idarə edilməsi" title="Sınaqlar" description="Aylıq sınaqlar yaradın, düzgün cavabları sürətli daxil edin və nəticələri avtomatik hesablayın." action={<Link href="?new=1" className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white"><Plus className="size-4"/>Yeni sınaq</Link>}/>{params.new&&<FormPanel title="Yeni sınaq"><ExamForm groups={(groups as any[]).filter(g=>g.status==="active")}/></FormPanel>}{exams.length?<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{(exams as any[]).map(exam=>{const scores=exam.exam_results.map((r:any)=>Number(r.normalized_score));const avg=scores.length?scores.reduce((a:number,b:number)=>a+b,0)/scores.length:null;return <Link key={exam.id} href={`/dashboard/exams/${exam.id}`} className="card group p-5 transition hover:-translate-y-0.5 hover:shadow-lg"><div className="flex items-start justify-between"><span className="rounded-xl bg-indigo-50 p-3 text-indigo-600"><ClipboardCheck className="size-5"/></span><span className="text-2xl font-bold text-slate-900">{azPercent(avg)}</span></div><h3 className="mt-5 font-bold">{exam.title}</h3><p className="mt-1 text-sm text-slate-500">{exam.groups.name}</p><div className="mt-5 flex items-center justify-between border-t pt-4 text-xs text-slate-500"><span className="flex items-center gap-1"><Calendar className="size-3.5"/>{azDate(exam.exam_date)}</span><span>{scores.length} nəticə · {exam.total_questions} sual</span></div><div className="mt-4 flex items-center justify-end gap-1 text-sm font-semibold text-indigo-600">Nəticələri aç<ChevronRight className="size-4"/></div></Link>})}</section>:<EmptyState title="Hələ sınaq yoxdur" description="İlk sınağı yaradın, sonra qrup şagirdlərinin düzgün cavablarını daxil edin."/>}</main></>}
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { AppHeader } from "@/components/layout/app-header";
+import { PageHeader } from "@/components/ui/page-header";
+import { FormPanel } from "@/components/ui/form-panel";
+import { ExamForm } from "@/components/forms/entity-forms";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ExamBrowser } from "@/components/exams/exam-browser";
+import { getExams, getGroups } from "@/lib/queries/teacher";
+
+export default async function ExamsPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
+  const [exams, groups, params] = await Promise.all([getExams(), getGroups(), searchParams]);
+  return <><AppHeader title="Sınaqlar"/><main className="p-5 md:p-8">
+    <PageHeader eyebrow="Nəticələrin idarə edilməsi" title="Sınaqlar" description="Sınaqları ay, qrup və nəticə vəziyyətinə görə süzün; tarixə və orta nəticəyə görə sıralayın." action={<Link href="?new=1" className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white"><Plus className="size-4"/>Yeni sınaq</Link>}/>
+    {params.new&&<FormPanel title="Yeni sınaq"><ExamForm groups={(groups as any[]).filter((group)=>group.status==="active")}/></FormPanel>}
+    {exams.length?<ExamBrowser exams={exams as any[]}/>:<EmptyState title="Hələ sınaq yoxdur" description="İlk sınağı yaradın, sonra qrup şagirdlərinin düzgün cavablarını daxil edin."/>}
+  </main></>;
+}

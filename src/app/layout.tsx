@@ -9,8 +9,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: { default: "MathRank", template: "%s · MathRank" },
-  description: "Ağıllı repetitor idarəetməsi və şagird performansı platforması",
+  title: { default: "MeyarİZ", template: "%s · MeyarİZ" },
+  description: "Hər nəticənin bir izi var",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -18,8 +18,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="az"
       suppressHydrationWarning
+      data-nav-layout="open"
       className={`${geistSans.variable} h-full antialiased`}
     >
+      <head><script dangerouslySetInnerHTML={{__html:`(function(){try{var v=localStorage.getItem("mathrank-navigation-layout");if(v==="collapsed"||v==="open"||v==="horizontal")document.documentElement.dataset.navLayout=v}catch(e){}})()`}}/></head>
       <body className="min-h-full"><div className="noise" />{children}<Toaster richColors position="top-right" /></body>
     </html>
   );

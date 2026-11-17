@@ -1,6 +1,8 @@
-# MathRank
+# MeyarİZ
 
-MathRank Azərbaycan dilində hazırlanmış müəllim idarəetməsi və şagird performansı platformasıdır. Tətbiq fərdi riyaziyyat müəlliminə qrupları, şagirdləri, dərs cədvəlini, sınaqları, nəticələri və reytinqləri bir paneldən idarə etməyə imkan verir. Müəllim və şagird üçün ayrı interfeys və səlahiyyət modeli mövcuddur.
+**Hər nəticənin bir izi var.**
+
+MeyarİZ Azərbaycan dilində hazırlanmış müəllim idarəetməsi və şagird performansı platformasıdır. Tətbiq fərdi riyaziyyat müəlliminə qrupları, şagirdləri, dərs cədvəlini, sınaqları, nəticələri və reytinqləri bir paneldən idarə etməyə imkan verir. Müəllim və şagird üçün ayrı interfeys və səlahiyyət modeli mövcuddur.
 
 Bu sənəd həm developer, həm də layihəni davam etdirəcək AI agent üçün əsas kontekst mənbəyidir. Kodda dəyişiklik etməzdən əvvəl bu README-ni və repozitoriyanın kökündəki `AGENTS.md` faylını oxuyun.
 
@@ -285,7 +287,7 @@ set role = 'teacher', full_name = 'Müəllimin adı'
 where id = 'AUTH_USER_UUID';
 
 insert into public.teacher_workspaces (owner_id, name)
-values ('AUTH_USER_UUID', 'MathRank');
+values ('AUTH_USER_UUID', 'MeyarİZ');
 
 insert into public.teacher_settings (workspace_id)
 select id

@@ -1,0 +1,39 @@
+<svg width="64" height="64" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Container -->
+  <rect width="44" height="44" rx="10" fill="#090d16" />
+  <rect x="0.5" y="0.5" width="43" height="43" rx="9.5" stroke="rgba(255,255,255,0.1)" />
+
+  <!-- Coordinates markers -->
+  <circle cx="8" cy="8" r="1" fill="#4f46e5" fill-opacity="0.4" />
+  <circle cx="36" cy="36" r="1" fill="#4f46e5" fill-opacity="0.4" />
+
+  <!-- Ascending Rank Bars -->
+  <rect x="9" y="24" width="4.5" height="12" rx="2" fill="#1e1b4b" />
+  <rect x="19.75" y="18" width="4.5" height="18" rx="2" fill="#312e81" />
+  <rect x="30.5" y="11" width="4.5" height="25" rx="2" fill="#4338ca" />
+
+  <!-- Dynamic 'M' Trajectory -->
+  <path
+    d="M 9 36 V 19.5 C 9 17.5 11 16.2 12.8 17.1 L 22 22 L 31.2 10.8 C 32.4 9.4 34.8 10.2 34.8 12 V 36"
+    stroke="#6366f1"
+    stroke-width="3.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Peak Highlight line -->
+  <path
+    d="M 12 17.5 L 22 22.5 L 32 10.5"
+    stroke="#ffffff"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Apex Star -->
+  <path
+    d="M 33 5 L 34.2 7.2 L 36.5 8.5 L 34.2 9.8 L 33 12 L 31.8 9.8 L 29.5 8.5 L 31.8 7.2 Z"
+    fill="#38bdf8"
+  />
+  <circle cx="33" cy="8.5" r="1.2" fill="#ffffff" />
+</svg>

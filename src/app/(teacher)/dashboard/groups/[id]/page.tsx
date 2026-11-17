@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FormPanel } from "@/components/ui/form-panel";
 import { getGroup } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
-import { azPercent } from "@/lib/utils";
+import { azDate, azPercent } from "@/lib/utils";
 
 export default async function GroupDetail({
   params,
@@ -23,6 +23,8 @@ export default async function GroupDetail({
   if (!group) notFound();
 
   const members = (group.group_memberships || []).filter((membership: any) => membership.active);
+  const weeklySchedules = (group.group_schedules || []).filter((schedule: any) => !schedule.is_extra);
+  const extraSchedules = (group.group_schedules || []).filter((schedule: any) => schedule.is_extra);
   const scores = members.flatMap((membership: any) => membership.students.exam_results.filter((result: any) => result.examinations.group_id === id).map((result: any) => Number(result.normalized_score)));
   const average = scores.length ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length : null;
 
@@ -49,7 +51,7 @@ export default async function GroupDetail({
         <section className="grid gap-4 md:grid-cols-3">
           <StatCard label="Aktiv şagirdlər" value={String(members.length)} detail="hazırkı üzvlər" icon={Users} />
           <StatCard label="Qrup ortası" value={azPercent(average)} detail={`${scores.length} nəticə əsasında`} icon={TrendingUp} />
-          <StatCard label="Həftəlik dərslər" value={String(group.group_schedules.length)} detail="təkrarlanan sessiya" icon={CalendarDays} />
+          <StatCard label="Dərs vaxtları" value={String(group.group_schedules.length)} detail={`${weeklySchedules.length} həftəlik · ${extraSchedules.length} əlavə`} icon={CalendarDays} />
         </section>
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_.7fr]">
@@ -64,7 +66,7 @@ export default async function GroupDetail({
 
           <article className="card p-5">
             <h3 className="font-bold">Həftəlik cədvəl</h3>
-            {group.group_schedules.length ? <div className="mt-4 space-y-3">{group.group_schedules.sort((a: any, b: any) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)).map((schedule: any) => <div key={schedule.id} className="rounded-xl bg-slate-50 p-3"><strong className="text-sm">{weekDays[schedule.weekday]}</strong><span className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Clock3 className="size-3" />{schedule.start_time.slice(0, 5)}–{schedule.end_time.slice(0, 5)}</span></div>)}</div> : <div className="mt-4"><EmptyState title="Cədvəl yoxdur" description="Bu qrupa dərs vaxtı əlavə edilməyib." /></div>}
+            {group.group_schedules.length ? <div className="mt-4 space-y-3">{group.group_schedules.sort((a: any, b: any) => (a.session_date || "").localeCompare(b.session_date || "") || a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)).map((schedule: any) => <div key={schedule.id} className={`rounded-xl p-3 ${schedule.is_extra ? "border border-amber-200 bg-amber-50" : "bg-slate-50"}`}><strong className="text-sm">{schedule.is_extra ? `Əlavə · ${azDate(schedule.session_date)}` : weekDays[schedule.weekday]}</strong><span className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Clock3 className="size-3" />{schedule.start_time.slice(0, 5)}–{schedule.end_time.slice(0, 5)}</span></div>)}</div> : <div className="mt-4"><EmptyState title="Cədvəl yoxdur" description="Bu qrupa dərs vaxtı əlavə edilməyib." /></div>}
           </article>
         </section>
       </main>

@@ -1,31 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { BarChart3,CalendarDays,ClipboardCheck,GraduationCap,LayoutDashboard,Medal,Settings,Users,Sigma,Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MeyarIzLogo, MeyarIzWordmark } from "@/components/ui/meyariz-logo";
+import { isNavigationActive, navigationFor, navigationHome, type NavigationRole } from "@/components/layout/navigation-config";
 
-const teacherNav=[
-  ["/dashboard","İdarəetmə paneli",LayoutDashboard],["/dashboard/groups","Qruplar",GraduationCap],["/dashboard/students","Şagirdlər",Users],["/dashboard/schedule","Dərs cədvəli",CalendarDays],["/dashboard/exams","Sınaqlar",ClipboardCheck],["/dashboard/rankings","Ümumi reytinq",Medal],["/dashboard/analytics","Analitika",BarChart3],["/dashboard/settings","Tənzimləmələr",Settings]
-] as const;
-const studentNav=[["/student/dashboard","Ana səhifə",LayoutDashboard],["/student/results","Nəticələr",ClipboardCheck],["/student/leaderboard","Reytinq",Medal],["/student/schedule","Cədvəl",CalendarDays],["/student/achievements","Nailiyyətlər",Sigma],["/student/profile","Profil",Users]] as const;
-
-export function Sidebar({role="teacher"}:{role?:"teacher"|"student"}){
+export function Sidebar({ role="teacher" }: { role?: NavigationRole }) {
   const path=usePathname();
-  const nav=role==="teacher"?teacherNav:studentNav;
-  const isActive=(href:string)=>href.endsWith("dashboard")?path===href:path.startsWith(href);
+  const nav=navigationFor(role);
   return <>
-    <aside className="relative hidden h-screen w-[292px] shrink-0 overflow-hidden border-r border-white/8 bg-[#0b1020] px-4 py-5 text-white lg:sticky lg:top-0 lg:flex lg:flex-col">
-      <div className="pointer-events-none absolute -left-24 -top-24 size-72 rounded-full bg-indigo-600/20 blur-3xl"/>
-      <div className="pointer-events-none absolute -bottom-32 -right-28 size-72 rounded-full bg-cyan-500/10 blur-3xl"/>
-      <Link href={role==="teacher"?"/dashboard":"/student/dashboard"} className="relative mb-7 flex items-center gap-3 rounded-2xl px-3 py-2">
-        <span className="relative block size-11 overflow-hidden rounded-2xl bg-black shadow-[0_12px_30px_rgba(79,70,229,.25)] ring-1 ring-white/10"><Image src="/mathrank-logo.png" alt="" fill sizes="44px" className="object-cover"/></span>
-        <span><strong className="block text-[19px] tracking-[-.03em]">MathRank</strong><small className="flex items-center gap-1 text-[10px] uppercase tracking-[.2em] text-slate-400"><Sparkles className="size-2.5"/>ağıllı inkişaf</small></span>
-      </Link>
-      <div className="relative mb-3 px-3 text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">Menyu</div>
-      <nav className="relative space-y-1.5">{nav.map(([href,label,Icon])=><Link key={href} href={href} className={cn("group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-medium text-slate-400 transition duration-200 hover:bg-white/[.06] hover:text-white",isActive(href)&&"bg-gradient-to-r from-indigo-500/25 to-violet-500/10 text-white shadow-[inset_0_0_0_1px_rgba(129,140,248,.18)]")}><span className={cn("grid size-8 place-items-center rounded-xl transition",isActive(href)?"bg-indigo-500 text-white shadow-lg shadow-indigo-950/40":"bg-white/[.04] text-slate-400 group-hover:bg-white/[.08] group-hover:text-white")}><Icon className="size-4"/></span>{label}{isActive(href)&&<span className="ml-auto size-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_#67e8f9]"/>}</Link>)}</nav>
+    <aside className="app-sidebar relative hidden h-screen shrink-0 lg:sticky lg:top-0 lg:block">
+      <div className="app-sidebar-panel flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white px-4 py-5">
+        <Link href={navigationHome(role)} className="mb-7 flex h-14 items-center gap-3 rounded-2xl px-2.5 py-2 transition hover:bg-slate-50">
+          <span className="shrink-0"><MeyarIzLogo size={42}/></span>
+          <MeyarIzWordmark className="sidebar-label whitespace-nowrap text-[20px]"/>
+        </Link>
+        <div className="sidebar-label mb-3 whitespace-nowrap px-3 text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Menyu</div>
+        <nav className="space-y-1.5">
+          {nav.map(([href,label,Icon])=>{const active=isNavigationActive(path,href);return <Link key={href} href={href} title={label} className={cn("group flex h-12 items-center gap-3 overflow-hidden rounded-xl px-2.5 text-sm font-medium transition-colors duration-150",active?"bg-indigo-50 font-semibold text-indigo-700 ring-1 ring-indigo-100":"text-slate-600 hover:bg-slate-50 hover:text-slate-900")}>
+            <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg transition-colors",active?"bg-indigo-600 text-white shadow-sm":"bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-indigo-600 group-hover:shadow-sm")}><Icon className="size-4"/></span>
+            <span className="sidebar-label whitespace-nowrap">{label}</span>
+            {active&&<span className="sidebar-label ml-auto size-1.5 shrink-0 rounded-full bg-indigo-500"/>}
+          </Link>;})}
+        </nav>
+        <div className="sidebar-label mt-auto rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-500"><strong className="block text-slate-700">Hər nəticənin bir izi var</strong>{role==="teacher"?"Tədris prosesini bir yerdən idarə edin.":"Nəticələrinizi və inkişafınızı izləyin."}</div>
+      </div>
     </aside>
-    <nav className="fixed inset-x-3 bottom-3 z-50 flex gap-1 overflow-x-auto rounded-[1.35rem] border border-white/80 bg-white/90 p-2 shadow-[0_18px_50px_rgba(15,23,42,.18)] backdrop-blur-xl lg:hidden">{nav.map(([href,label,Icon])=><Link key={href} href={href} className={cn("flex min-w-[70px] flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold text-slate-500",isActive(href)&&"bg-slate-950 text-white shadow-lg")}><Icon className="size-4"/><span className="max-w-16 truncate">{label}</span></Link>)}</nav>
+    <nav aria-label="Mobil naviqasiya" className="fixed inset-x-3 bottom-3 z-50 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-lg backdrop-blur-md lg:hidden">
+      {nav.map(([href,label,Icon])=>{const active=isNavigationActive(path,href);return <Link key={href} href={href} className={cn("flex min-w-[70px] flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold transition-colors",active?"bg-indigo-50 text-indigo-700":"text-slate-500 hover:bg-slate-50")}><Icon className={cn("size-4",active&&"text-indigo-600")}/><span className="max-w-16 truncate">{label}</span></Link>;})}
+    </nav>
   </>;
 }

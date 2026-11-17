@@ -22,61 +22,58 @@
 html { background: var(--background); }
 body {
   min-height: 100%;
-  background:
-    radial-gradient(circle at 78% -10%, rgba(99, 91, 255, .12), transparent 30rem),
-    radial-gradient(circle at 18% 110%, rgba(14, 165, 233, .09), transparent 34rem),
-    var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, sans-serif;
   letter-spacing: -.012em;
 }
 
 * { border-color: var(--line); }
-::selection { background: rgba(99, 91, 255, .2); color: #312e81; }
+::selection { background: #e0e7ff; color: #1e1b4b; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button, input, select, textarea { font: inherit; }
 
-.noise {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  pointer-events: none;
-  opacity: .014;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
-}
-
 .dashboard-stage { min-width: 0; flex: 1; }
+.app-sidebar { width: 292px; transition: width .2s ease; }
+.app-sidebar-panel { position: relative; z-index: 40; width: 292px; transition: width .2s ease, box-shadow .2s ease; }
+.sidebar-label { opacity: 1; transition: opacity .12s ease; }
 .dashboard-stage > main { width: 100%; max-width: 1600px; margin-inline: auto; padding-bottom: 7rem; }
 
 .card {
-  border: 1px solid rgba(255, 255, 255, .9);
-  background: rgba(255, 255, 255, .88);
-  border-radius: 1.5rem;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, .03), 0 18px 50px rgba(31, 38, 72, .07), inset 0 0 0 1px rgba(230, 233, 240, .8);
-  backdrop-filter: blur(18px);
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(16, 24, 40, 0.04), 0 1px 2px -1px rgba(16, 24, 40, 0.02);
 }
 
-.focus-ring:focus-visible { outline: 3px solid rgba(99, 91, 255, .2); outline-offset: 2px; }
+.focus-ring:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea {
-  border-color: #dde1eb;
-  background-color: rgba(255, 255, 255, .9);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, .03);
-  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+  border-color: #e2e8f0;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(16, 24, 40, 0.03);
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
-input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover, select:hover, textarea:hover { border-color: #cbd1df; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover, select:hover, textarea:hover { border-color: #cbd5e1; }
 input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus, select:focus, textarea:focus {
-  border-color: rgba(99, 91, 255, .6);
-  box-shadow: 0 0 0 4px rgba(99, 91, 255, .09), 0 1px 2px rgba(16, 24, 40, .04);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
   outline: none;
 }
 
-table thead { background: rgba(247, 248, 252, .78); }
-table tbody tr { transition: background-color .18s ease; }
-table tbody tr:hover { background: rgba(248, 249, 252, .8); }
+table thead { background-color: #f8fafc; }
+table tbody tr { transition: background-color .15s ease; }
+table tbody tr:hover { background-color: #f8fafc; }
 
 @media (min-width: 1024px) {
   .dashboard-stage > main { padding-bottom: 3rem; }
+  html[data-nav-layout="collapsed"] .app-sidebar { width: 88px; }
+  html[data-nav-layout="collapsed"] .app-sidebar-panel { width: 88px; }
+  html[data-nav-layout="collapsed"] .app-sidebar-panel .sidebar-label { opacity: 0; pointer-events: none; }
+  html[data-nav-layout="collapsed"] .app-sidebar-panel:hover { width: 292px; box-shadow: 18px 0 45px rgba(15, 23, 42, .12); }
+  html[data-nav-layout="collapsed"] .app-sidebar-panel:hover .sidebar-label { opacity: 1; pointer-events: auto; transition-delay: .08s; }
+  html[data-nav-layout="horizontal"] .app-sidebar { display: none !important; }
+  html[data-nav-layout="horizontal"] .horizontal-navigation { display: flex; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }

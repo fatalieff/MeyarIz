@@ -1,5 +1,21 @@
-import { LucideIcon,TrendingDown,TrendingUp } from "lucide-react";
+import { LucideIcon, TrendingDown, TrendingUp } from "lucide-react";
 
-export function StatCard({label,value,detail,icon:Icon,trend}:{label:string;value:string;detail:string;icon:LucideIcon;trend?:number|null}){
-  return <article className="card group relative overflow-hidden p-5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(31,38,72,.12)]"><div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 opacity-80"/><div className="absolute -right-10 -top-12 size-32 rounded-full bg-gradient-to-br from-indigo-100/80 to-violet-100/20 blur-2xl transition duration-500 group-hover:scale-125"/><div className="relative flex items-start justify-between"><div><p className="text-[13px] font-medium text-slate-500">{label}</p><p className="mt-2 text-[2rem] font-bold tracking-[-.045em] text-slate-950">{value}</p></div><span className="grid size-11 place-items-center rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 text-indigo-600 shadow-sm"><Icon className="size-5"/></span></div><div className="relative mt-4 flex items-center gap-1.5 text-xs text-slate-500">{trend!=null&&(trend>=0?<TrendingUp className="size-3.5 text-emerald-500"/>:<TrendingDown className="size-3.5 text-rose-500"/>)}<span>{detail}</span></div></article>;
+export function StatCard({ label, value, detail, icon: Icon, trend }: { label: string; value: string; detail: string; icon: LucideIcon; trend?: number | null }) {
+  return (
+    <article className="card p-5 transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+        </div>
+        <span className="grid size-11 place-items-center rounded-xl border border-slate-200/80 bg-slate-50 text-indigo-600 shadow-xs">
+          <Icon className="size-5" />
+        </span>
+      </div>
+      <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-500">
+        {trend != null && (trend >= 0 ? <TrendingUp className="size-3.5 text-emerald-600" /> : <TrendingDown className="size-3.5 text-rose-600" />)}
+        <span>{detail}</span>
+      </div>
+    </article>
+  );
 }

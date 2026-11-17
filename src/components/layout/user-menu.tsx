@@ -62,26 +62,26 @@ export function UserMenu({ userName, role }: UserMenuProps) {
         aria-label="Hesab menyusunu aç"
         onClick={() => setIsOpen((open) => !open)}
         className={cn(
-          "group flex items-center gap-2 rounded-2xl border bg-white/85 p-1.5 shadow-sm transition hover:border-indigo-200 hover:shadow-md sm:gap-3 sm:pr-3",
-          isOpen ? "border-indigo-200 ring-4 ring-indigo-500/10" : "border-slate-200/80",
+          "group flex items-center gap-2 rounded-xl border bg-white p-1.5 shadow-xs transition-colors hover:border-slate-300 sm:gap-3 sm:pr-3",
+          isOpen ? "border-indigo-500 ring-2 ring-indigo-500/10" : "border-slate-200",
         )}
       >
-        <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 font-bold text-white shadow-md">
+        <span className="grid size-9 place-items-center rounded-lg bg-indigo-600 font-bold text-white shadow-xs">
           {initial}
         </span>
         <span className="hidden min-w-0 text-left text-sm sm:block">
           <strong className="block max-w-40 truncate text-slate-800">{userName}</strong>
           <span className="text-[11px] text-slate-500">{role === "teacher" ? "Müəllim hesabı" : "Şagird hesabı"}</span>
         </span>
-        <ChevronDown className={cn("hidden size-4 text-slate-400 transition-transform sm:block", isOpen && "rotate-180 text-indigo-500")} />
+        <ChevronDown className={cn("hidden size-4 text-slate-400 transition-transform sm:block", isOpen && "rotate-180 text-indigo-600")} />
       </button>
 
       {isOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-[0_24px_60px_rgba(15,23,42,.18)] backdrop-blur-xl"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
         >
-          <div className="mb-1 rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/70 px-3 py-3 sm:hidden">
+          <div className="mb-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 sm:hidden">
             <strong className="block truncate text-sm text-slate-900">{userName}</strong>
             <span className="text-xs text-slate-500">{role === "teacher" ? "Müəllim hesabı" : "Şagird hesabı"}</span>
           </div>

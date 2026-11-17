@@ -9,7 +9,7 @@ import { DeleteStudentButton } from "@/components/students/delete-student-button
 import { EmptyState } from "@/components/ui/empty-state";
 import { FormPanel } from "@/components/ui/form-panel";
 import { getGroups, getStudent } from "@/lib/queries/teacher";
-import { azDate, azPercent, normalizeAzPhone } from "@/lib/utils";
+import { azDate, azMonthShort, azPercent, normalizeAzPhone } from "@/lib/utils";
 import { performanceTrend } from "@/lib/calculations/scoring";
 
 export default async function StudentDetail({
@@ -29,7 +29,7 @@ export default async function StudentDetail({
   const average = scores.length ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length : null;
   const trend = performanceTrend(scores.at(-1) ?? null, scores.at(-2) ?? null);
   const chart = results.map((result: any) => ({
-    label: new Intl.DateTimeFormat("az-AZ", { month: "short" }).format(new Date(result.examinations.exam_date)),
+    label: azMonthShort(result.examinations.exam_date),
     value: Number(result.normalized_score),
   }));
 

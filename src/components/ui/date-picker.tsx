@@ -46,7 +46,7 @@ export function DatePicker({ name, defaultValue = "", ariaLabel }: { name: strin
     <div ref={rootRef} className="relative">
       <input type="hidden" name={name} value={value} />
       <button type="button" aria-label={ariaLabel} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((current) => !current)} className={cn("focus-ring flex h-11 w-full items-center justify-between rounded-xl border bg-white px-3 text-left text-sm font-medium outline-none transition", open ? "border-indigo-400 ring-4 ring-indigo-500/10" : "hover:border-slate-300", selected ? "text-slate-800" : "text-slate-400")}>
-        <span>{selected ? new Intl.DateTimeFormat("az-AZ", { day: "2-digit", month: "long", year: "numeric" }).format(selected) : "Tarix seçin"}</span>
+        <span>{selected ? `${selected.getDate()} ${monthNames[selected.getMonth()].toLowerCase()} ${selected.getFullYear()}` : "Tarix seçin"}</span>
         <CalendarDays className={cn("size-4", open ? "text-indigo-600" : "text-slate-400")} />
       </button>
 
