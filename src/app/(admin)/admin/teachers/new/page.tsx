@@ -3,6 +3,8 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { CreateTeacherForm } from "@/components/admin/teacher-form";
 import { ChevronLeft, ShieldCheck, Lock, Layers } from "lucide-react";
 
+export const instant = false;
+
 export default function NewTeacherPage() {
   return (
     <>

@@ -1,5 +1,91 @@
-import { Trophy } from "lucide-react"; import { AppHeader } from "@/components/layout/app-header"; import { PageHeader } from "@/components/ui/page-header"; import { EmptyState } from "@/components/ui/empty-state"; import { Badge } from "@/components/ui/badge"; import { getRankings } from "@/lib/queries/teacher"; import { azPercent } from "@/lib/utils";
+import { Trophy } from "lucide-react";
+import { AppHeader } from "@/components/layout/app-header";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { getRankings } from "@/lib/queries/teacher";
+import { azPercent } from "@/lib/utils";
+import { rankingPeriodLabels } from "@/lib/calculations/ranking-period";
 
 export const instant = false;
 
-export default async function RankingsPage(){const rows=await getRankings();let prior:number|null=null,rank=0;const ranked=(rows as any[]).map((r,i)=>{const score=Number(r.ranking_score);if(prior===null||Math.abs(prior-score)>.001)rank=i+1;prior=score;return{...r,rank,score}});return <><AppHeader title="Ümumi reytinq"/><main className="p-5 md:p-8"><PageHeader eyebrow="Variant B" title="Şagird reytinqi" description="Reytinq qeydə alınmış normallaşdırılmış nəticələrin orta göstəricisinə əsaslanır. Fərqli çətinlikli sınaqlar akademik baxımdan tam bərabər müqayisə sayılmır."/>{ranked.length?<section className="card overflow-hidden"><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-sm"><thead className="border-b bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-4">Yer</th><th className="px-5 py-4">Şagird</th><th className="px-5 py-4">Qrup</th><th className="px-5 py-4">Sınaq sayı</th><th className="px-5 py-4 text-right">Reytinq balı</th></tr></thead><tbody className="divide-y">{ranked.map(row=><tr key={row.student_id} className="hover:bg-slate-50"><td className="px-5 py-4"><span className={`inline-grid size-9 place-items-center rounded-xl font-bold ${row.rank===1?"bg-amber-100 text-amber-700":row.rank===2?"bg-slate-200 text-slate-700":row.rank===3?"bg-orange-100 text-orange-700":"bg-slate-50 text-slate-500"}`}>{row.rank===1?<Trophy className="size-4"/>:row.rank}</span></td><td className="px-5 py-4 font-semibold">{row.full_name}</td><td className="px-5 py-4"><Badge tone="brand">{row.group_name}</Badge></td><td className="px-5 py-4">{row.examination_count}{row.examination_count<2&&<Badge tone="warning" className="ml-2">Müvəqqəti</Badge>}</td><td className="px-5 py-4 text-right text-base font-bold text-indigo-600">{azPercent(row.score)}</td></tr>)}</tbody></table></div></section>:<EmptyState title="Reytinq hələ formalaşmayıb" description="Şagird nəticələri daxil edildikdən sonra qrup və ümumi reytinq avtomatik hesablanacaq."/>}</main></>}
+export default async function RankingsPage() {
+  const { rows, rankingPeriod } = await getRankings();
+  const periodLabel = rankingPeriodLabels[rankingPeriod];
+  let prior: number | null = null,
+    rank = 0;
+  const ranked = (rows as any[]).map((r, i) => {
+    const score = Number(r.ranking_score);
+    if (prior === null || Math.abs(prior - score) > 0.001) rank = i + 1;
+    prior = score;
+    return { ...r, rank, score };
+  });
+  return (
+    <>
+      <AppHeader title="Ümumi reytinq" />
+      <main className="p-5 md:p-8">
+        <PageHeader
+          eyebrow="Variant B"
+          title="Şagird reytinqi"
+          description={`Reytinq ${periodLabel.toLocaleLowerCase("az-AZ")} ərzində qeydə alınmış normallaşdırılmış nəticələrin ortasına əsaslanır. Fərqli çətinlikli sınaqlar akademik baxımdan tam bərabər müqayisə sayılmır.`}
+        />
+        {ranked.length ? (
+          <section className="card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-sm">
+                <thead className="border-b bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th className="px-5 py-4">Yer</th>
+                    <th className="px-5 py-4">Şagird</th>
+                    <th className="px-5 py-4">Qrup</th>
+                    <th className="px-5 py-4">Sınaq sayı</th>
+                    <th className="px-5 py-4 text-right">Reytinq balı</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {ranked.map((row) => (
+                    <tr key={row.student_id} className="hover:bg-slate-50">
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-grid size-9 place-items-center rounded-xl font-bold ${row.rank === 1 ? "bg-amber-100 text-amber-700" : row.rank === 2 ? "bg-slate-200 text-slate-700" : row.rank === 3 ? "bg-orange-100 text-orange-700" : "bg-slate-50 text-slate-500"}`}
+                        >
+                          {row.rank === 1 ? (
+                            <Trophy className="size-4" />
+                          ) : (
+                            row.rank
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-semibold">
+                        {row.full_name}
+                      </td>
+                      <td className="px-5 py-4">
+                        <Badge tone="brand">{row.group_name}</Badge>
+                      </td>
+                      <td className="px-5 py-4">
+                        {row.examination_count}
+                        {row.examination_count < 2 && (
+                          <Badge tone="warning" className="ml-2">
+                            Müvəqqəti
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-right text-base font-bold text-indigo-600">
+                        {azPercent(row.score)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : (
+          <EmptyState
+            title="Reytinq hələ formalaşmayıb"
+            description="Şagird nəticələri daxil edildikdən sonra qrup və ümumi reytinq avtomatik hesablanacaq."
+          />
+        )}
+      </main>
+    </>
+  );
+}

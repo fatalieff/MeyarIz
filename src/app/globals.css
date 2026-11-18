@@ -94,9 +94,9 @@ table tbody tr:hover { background-color: #f8fafc; }
     left: 0;
     height: 100vh;
     width: 88px;
-    background-color: #ffffff;
+    background: linear-gradient(180deg, #0b1020 0%, #111831 52%, #0a0f1e 100%);
     z-index: 50;
-    box-shadow: 1px 0 0 0 #e2e8f0;
+    box-shadow: 1px 0 0 0 rgba(255,255,255,.08);
     transition: width .22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .22s ease;
   }
   html[data-nav-layout="collapsed"] .app-sidebar-panel .sidebar-label {
@@ -108,7 +108,7 @@ table tbody tr:hover { background-color: #f8fafc; }
   }
   html[data-nav-layout="collapsed"] .app-sidebar-panel:hover {
     width: 292px;
-    box-shadow: 16px 0 40px -10px rgba(15, 23, 42, .14), 1px 0 0 0 #e2e8f0;
+    box-shadow: 20px 0 50px -14px rgba(2, 6, 23, .42), 1px 0 0 0 rgba(255,255,255,.08);
   }
   html[data-nav-layout="collapsed"] .app-sidebar-panel:hover .sidebar-label {
     opacity: 1;

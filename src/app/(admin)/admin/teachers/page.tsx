@@ -4,6 +4,8 @@ import { getAdminTeachers } from "@/lib/queries/admin";
 import { TeachersTable } from "@/components/admin/teachers-table";
 import { UserPlus } from "lucide-react";
 
+export const instant = false;
+
 export default async function AdminTeachersPage() {
   const teachers = await getAdminTeachers();
 

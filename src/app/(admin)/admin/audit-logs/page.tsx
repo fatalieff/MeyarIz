@@ -2,6 +2,8 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { getAdminAuditLogs } from "@/lib/queries/admin";
 import { CheckCircle2, XCircle } from "lucide-react";
 
+export const instant = false;
+
 export default async function AdminAuditLogsPage() {
   const logs = await getAdminAuditLogs(100);
 

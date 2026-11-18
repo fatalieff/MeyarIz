@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { getAdminTeacherDetails } from "@/lib/queries/admin";
 import { TeacherActions } from "@/components/admin/teacher-actions";
+
+export const instant = false;
 import {
   ChevronLeft,
   Mail,

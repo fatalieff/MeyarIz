@@ -1,5 +1,82 @@
-import { BarChart3,TrendingUp,Users } from "lucide-react"; import { AppHeader } from "@/components/layout/app-header"; import { PageHeader } from "@/components/ui/page-header"; import { StatCard } from "@/components/dashboard/stat-card"; import { PerformanceChart } from "@/components/charts/performance-chart"; import { EmptyState } from "@/components/ui/empty-state"; import { getDashboard,getRankings } from "@/lib/queries/teacher"; import { azPercent } from "@/lib/utils";
+import { BarChart3, TrendingUp, Users } from "lucide-react";
+import { AppHeader } from "@/components/layout/app-header";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { PerformanceChart } from "@/components/charts/performance-chart";
+import { EmptyState } from "@/components/ui/empty-state";
+import { getAnalyticsData } from "@/lib/queries/teacher";
+import { azPercent } from "@/lib/utils";
+import { rankingPeriodLabels } from "@/lib/calculations/ranking-period";
 
 export const instant = false;
 
-export default async function AnalyticsPage(){const[data,rankings]=await Promise.all([getDashboard(),getRankings()]);const results=data.results as any[];const months=new Map<string,number[]>();results.forEach(r=>{const label=new Intl.DateTimeFormat("az-AZ",{month:"short",year:"2-digit"}).format(new Date(r.examinations.exam_date));months.set(label,[...(months.get(label)||[]),Number(r.normalized_score)])});const chart=[...months].map(([label,s])=>({label,value:Number((s.reduce((a,b)=>a+b,0)/s.length).toFixed(1))}));const top=(rankings as any[])[0];return <><AppHeader title="Analitika"/><main className="p-5 md:p-8"><PageHeader eyebrow="Performans təhlili" title="Real nəticələrdən aydın mənzərə" description="Qrafiklər yalnız qeydə alınmış sınaq nəticələrinə əsaslanır; boş nəticələr sıfır hesab edilmir."/><section className="grid gap-4 md:grid-cols-3"><StatCard label="Ümumi orta" value={azPercent(data.average)} detail={`${results.length} qeydə alınmış nəticə`} icon={BarChart3}/><StatCard label="Ən yüksək göstərici" value={top?azPercent(Number(top.ranking_score)):"—"} detail={top?.full_name||"Kifayət qədər məlumat yoxdur"} icon={TrendingUp}/><StatCard label="Nümunə ölçüsü" value={String(results.length)} detail="təhlil edilən nəticə" icon={Users}/></section><section className="card mt-6 p-5 sm:p-6"><h3 className="font-bold">Aylıq orta nəticə</h3><p className="mt-1 text-sm text-slate-500">Bütün qrupların zaman üzrə göstəricisi</p><div className="mt-5">{chart.length?<PerformanceChart data={chart}/>:<EmptyState title="Təhlil üçün məlumat yoxdur" description="Sınaq nəticələri əlavə etdikcə performans qrafiki yaranacaq."/>}</div></section></main></>}
+export default async function AnalyticsPage() {
+  const data = await getAnalyticsData();
+  const periodLabel = rankingPeriodLabels[data.rankingPeriod];
+  const results = data.results as any[];
+  const months = new Map<string, number[]>();
+  results.forEach((r) => {
+    const label = new Intl.DateTimeFormat("az-AZ", {
+      month: "short",
+      year: "2-digit",
+    }).format(new Date(r.examinations.exam_date));
+    months.set(label, [
+      ...(months.get(label) || []),
+      Number(r.normalized_score),
+    ]);
+  });
+  const chart = [...months].map(([label, s]) => ({
+    label,
+    value: Number((s.reduce((a, b) => a + b, 0) / s.length).toFixed(1)),
+  }));
+  const top = data.top as any;
+  return (
+    <>
+      <AppHeader title="Analitika" />
+      <main className="p-5 md:p-8">
+        <PageHeader
+          eyebrow="Performans təhlili"
+          title="Real nəticələrdən aydın mənzərə"
+          description={`Qrafiklər ${periodLabel.toLocaleLowerCase("az-AZ")} seçiminə əsaslanır; boş nəticələr sıfır hesab edilmir.`}
+        />
+        <section className="grid gap-4 md:grid-cols-3">
+          <StatCard
+            label="Ümumi orta"
+            value={azPercent(data.average)}
+            detail={`${results.length} qeydə alınmış nəticə`}
+            icon={BarChart3}
+          />
+          <StatCard
+            label="Ən yüksək göstərici"
+            value={top ? azPercent(Number(top.ranking_score)) : "—"}
+            detail={top?.full_name || "Kifayət qədər məlumat yoxdur"}
+            icon={TrendingUp}
+          />
+          <StatCard
+            label="Nümunə ölçüsü"
+            value={String(results.length)}
+            detail="təhlil edilən nəticə"
+            icon={Users}
+          />
+        </section>
+        <section className="card mt-6 p-5 sm:p-6">
+          <h3 className="font-bold">Aylıq orta nəticə</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Bütün qrupların {periodLabel.toLocaleLowerCase("az-AZ")} üzrə
+            göstəricisi
+          </p>
+          <div className="mt-5">
+            {chart.length ? (
+              <PerformanceChart data={chart} />
+            ) : (
+              <EmptyState
+                title="Təhlil üçün məlumat yoxdur"
+                description="Sınaq nəticələri əlavə etdikcə performans qrafiki yaranacaq."
+              />
+            )}
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}

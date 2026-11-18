@@ -7,6 +7,8 @@ import { weekDays } from "@/lib/calculations/schedules";
 import { azDate } from "@/lib/utils";
 import { ScheduleExpiryRefresh } from "@/components/schedules/schedule-expiry-refresh";
 
+export const instant = false;
+
 export default async function StudentSchedule(){
   const data=await getStudentData();const student:any=data?.student;const group:any=data?.membership?.groups;
   const slots=[...(group?.group_schedules||[])];

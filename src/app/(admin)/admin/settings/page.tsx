@@ -2,6 +2,8 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { getSessionProfile } from "@/lib/auth/session";
 import { ShieldCheck, User, Server } from "lucide-react";
 
+export const instant = false;
+
 export default async function AdminSettingsPage() {
   const profile = await getSessionProfile();
 
