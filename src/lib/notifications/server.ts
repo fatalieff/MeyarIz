@@ -110,10 +110,10 @@ export async function notifyGroup(supabase: SupabaseClient, input: NotificationI
     event_key: input.eventKey,
   }));
 
-  const { error } = await supabase.from("notifications").upsert(rows, {
-    onConflict: "student_id,event_key",
-    ignoreDuplicates: true,
-  });
+  const { error } = await supabase.from("notifications").insert(rows);
+  if (error?.code === "23505") {
+    return { recipients: 0, targets: 0, sent: 0, failed: 0 };
+  }
   if (error) {
     console.error("[notifications] Notification rows could not be created:", error);
     return { recipients: 0, targets: 0, sent: 0, failed: 0, error: "Bildirişlər yaradıla bilmədi." };
