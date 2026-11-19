@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BellRing, CheckCheck, Smartphone } from "lucide-react";
+import { Bell, BellRing, CheckCheck, LoaderCircle, Send, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { sendTestNotification } from "@/app/actions/notifications";
 import { createClient } from "@/lib/supabase/browser";
 
 type NotificationItem = {
   id: string;
-  type: "schedule_created" | "schedule_updated" | "extra_lesson" | "exam_result";
+  type: "schedule_created" | "schedule_updated" | "extra_lesson" | "exam_result" | "test";
   title: string;
   body: string;
   link: string;
@@ -19,6 +20,14 @@ function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - value.length % 4) % 4);
   const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
   return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+}
+
+function subscriptionUsesKey(subscription: PushSubscription, publicKey: string) {
+  const current = subscription.options.applicationServerKey;
+  if (!current) return false;
+  const expected = urlBase64ToUint8Array(publicKey);
+  const actual = new Uint8Array(current);
+  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
 }
 
 const timeFormatter = new Intl.DateTimeFormat("az-AZ", {
@@ -34,6 +43,9 @@ export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [pushState, setPushState] = useState<"unknown" | "enabled" | "disabled" | "unsupported">("unknown");
   const [enabling, setEnabling] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [pushMessage, setPushMessage] = useState<string>();
+  const [needsIosInstall, setNeedsIosInstall] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
@@ -63,11 +75,40 @@ export function NotificationCenter() {
         return;
       }
       const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
-      const subscription = await registration.pushManager.getSubscription();
-      setPushState(subscription && Notification.permission === "granted" ? "enabled" : "disabled");
+      let subscription = await registration.pushManager.getSubscription();
+      const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+        || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+      setNeedsIosInstall(isIos && !isStandalone);
+
+      if (subscription && publicKey && !subscriptionUsesKey(subscription, publicKey)) {
+        await subscription.unsubscribe();
+        subscription = null;
+      }
+      if (subscription && Notification.permission === "granted") {
+        const serialized = subscription.toJSON();
+        if (!serialized.endpoint || !serialized.keys?.p256dh || !serialized.keys.auth) throw new Error("Push abunəliyi natamamdır.");
+        const { error: syncError } = await supabase.from("push_subscriptions").upsert({
+          student_id: student.id,
+          endpoint: serialized.endpoint,
+          p256dh: serialized.keys.p256dh,
+          auth: serialized.keys.auth,
+          user_agent: navigator.userAgent,
+        }, { onConflict: "endpoint" });
+        if (syncError) throw syncError;
+        setPushState("enabled");
+        setPushMessage("Cihaz serverlə sinxronlaşdırıldı.");
+      } else {
+        setPushState("disabled");
+      }
     };
 
-    void setup();
+    void setup().catch((error: unknown) => {
+      console.error("Notification setup failed:", error);
+      setPushState("disabled");
+      setPushMessage("Cihaz qeydiyyatı tamamlanmadı. Yenidən aktiv edin.");
+    });
     return () => { if (channel) void supabase.removeChannel(channel); };
   }, []);
 
@@ -84,6 +125,7 @@ export function NotificationCenter() {
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!supabase || !studentId || !publicKey || pushState === "unsupported") return;
     setEnabling(true);
+    setPushMessage(undefined);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
@@ -91,7 +133,11 @@ export function NotificationCenter() {
         return;
       }
       const registration = await navigator.serviceWorker.ready;
-      const existing = await registration.pushManager.getSubscription();
+      let existing = await registration.pushManager.getSubscription();
+      if (existing && !subscriptionUsesKey(existing, publicKey)) {
+        await existing.unsubscribe();
+        existing = null;
+      }
       const subscription = existing || await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -107,10 +153,27 @@ export function NotificationCenter() {
       }, { onConflict: "endpoint" });
       if (error) throw error;
       setPushState("enabled");
-    } catch {
+      setPushMessage("Cihaz bildirişləri aktivdir.");
+    } catch (error) {
+      console.error("Push activation failed:", error);
       setPushState("disabled");
+      setPushMessage("Aktivləşdirmə alınmadı. Brauzer icazəsini yoxlayıb yenidən cəhd edin.");
     } finally {
       setEnabling(false);
+    }
+  };
+
+  const testPush = async () => {
+    setTesting(true);
+    setPushMessage(undefined);
+    try {
+      const result = await sendTestNotification();
+      setPushMessage(result.message || result.error || "Test tamamlanmadı.");
+    } catch (error) {
+      console.error("Push test failed:", error);
+      setPushMessage("Test zamanı bağlantı xətası yarandı.");
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -138,7 +201,15 @@ export function NotificationCenter() {
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-indigo-100 text-indigo-700"><Smartphone className="size-4"/></span>
           <span><strong className="block text-xs text-slate-900">Cihaz bildirişlərini aktiv et</strong><span className="mt-0.5 block text-[11px] leading-4 text-slate-500">Sayt bağlı olanda da dərs və nəticə yeniliklərini al.</span></span>
         </button>
+        {needsIosInstall && <p className="mt-2 text-[11px] leading-4 text-amber-700">iPhone-da push üçün saytı Safari paylaş menyusundan “Ana ekrana əlavə et”, sonra həmin ikonla aç.</p>}
       </div>}
+      {pushState === "enabled" && <div className="flex items-center justify-between gap-3 border-b bg-emerald-50/60 px-4 py-3">
+        <div><strong className="block text-xs text-emerald-900">Cihaz bildirişləri aktivdir</strong><span className="text-[11px] text-emerald-700">İndi real göndərişi yoxlaya bilərsiniz.</span></div>
+        <button type="button" disabled={testing} onClick={() => void testPush()} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60">
+          {testing ? <LoaderCircle className="size-3.5 animate-spin"/> : <Send className="size-3.5"/>}Test et
+        </button>
+      </div>}
+      {pushMessage && <p className="border-b bg-slate-50 px-4 py-2 text-[11px] leading-4 text-slate-600">{pushMessage}</p>}
       <div className="max-h-[25rem] overflow-y-auto">
         {items.length ? items.map((item) => <Link key={item.id} href={item.link} onClick={() => { setOpen(false); void markRead([item.id]); }} className={`block border-b px-4 py-3 transition last:border-0 hover:bg-slate-50 ${item.read_at ? "bg-white" : "bg-indigo-50/40"}`}>
           <div className="flex gap-3"><span className={`mt-1 size-2 shrink-0 rounded-full ${item.read_at ? "bg-slate-200" : "bg-indigo-500"}`}/><span className="min-w-0"><strong className="block text-sm text-slate-900">{item.title}</strong><span className="mt-1 block text-xs leading-5 text-slate-600">{item.body}</span><time className="mt-1.5 block text-[10px] font-medium text-slate-400">{timeFormatter.format(new Date(item.created_at))}</time></span></div>
