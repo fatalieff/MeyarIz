@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BellRing, CheckCheck, LoaderCircle, Send, Smartphone } from "lucide-react";
+import { Bell, BellRing, CheckCheck, LoaderCircle, Send, Share, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { sendTestNotification } from "@/app/actions/notifications";
 import { createClient } from "@/lib/supabase/browser";
@@ -70,6 +70,14 @@ export function NotificationCenter() {
         })
         .subscribe();
 
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+        || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+      setNeedsIosInstall(isIos && !isStandalone);
+      if (isIos && !isStandalone) {
+        setPushState("unsupported");
+        return;
+      }
       if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         setPushState("unsupported");
         return;
@@ -77,10 +85,6 @@ export function NotificationCenter() {
       const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
       let subscription = await registration.pushManager.getSubscription();
       const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-        || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-      setNeedsIosInstall(isIos && !isStandalone);
 
       if (subscription && publicKey && !subscriptionUsesKey(subscription, publicKey)) {
         await subscription.unsubscribe();
@@ -196,13 +200,19 @@ export function NotificationCenter() {
         <div><strong className="text-sm text-slate-900">Bildirişlər</strong><p className="text-xs text-slate-500">{unread ? `${unread} yeni bildiriş` : "Hamısı oxunub"}</p></div>
         {unread > 0 && <button type="button" onClick={() => void markRead(items.filter((item) => !item.read_at).map((item) => item.id))} className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600"><CheckCheck className="size-3.5"/>Hamısını oxu</button>}
       </div>
-      {pushState !== "enabled" && pushState !== "unsupported" && <div className="border-b bg-indigo-50/70 p-3">
+      {needsIosInstall && <div className="border-b bg-amber-50/80 p-3">
+        <div className="flex gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-amber-200">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700"><Share className="size-4"/></span>
+          <span><strong className="block text-xs text-slate-900">Əvvəlcə ana ekrana əlavə et</strong><span className="mt-1 block text-[11px] leading-4 text-slate-600">Safari-də aşağıdakı <b>•••</b> menyusunu aç, <b>Paylaş</b> → <b>Ana ekrana əlavə et</b> seç. Sonra MeyarİZ-i ana ekrandakı ikonla aç və zəng bölməsinə qayıt.</span></span>
+        </div>
+      </div>}
+      {!needsIosInstall && pushState !== "enabled" && pushState !== "unsupported" && <div className="border-b bg-indigo-50/70 p-3">
         <button type="button" disabled={enabling || !studentId} onClick={() => void enablePush()} className="flex w-full items-center gap-3 rounded-xl bg-white p-3 text-left shadow-sm ring-1 ring-indigo-100 disabled:opacity-60">
           <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-indigo-100 text-indigo-700"><Smartphone className="size-4"/></span>
           <span><strong className="block text-xs text-slate-900">Cihaz bildirişlərini aktiv et</strong><span className="mt-0.5 block text-[11px] leading-4 text-slate-500">Sayt bağlı olanda da dərs və nəticə yeniliklərini al.</span></span>
         </button>
-        {needsIosInstall && <p className="mt-2 text-[11px] leading-4 text-amber-700">iPhone-da push üçün saytı Safari paylaş menyusundan “Ana ekrana əlavə et”, sonra həmin ikonla aç.</p>}
       </div>}
+      {!needsIosInstall && pushState === "unsupported" && <p className="border-b bg-amber-50 px-4 py-3 text-[11px] leading-4 text-amber-800">Bu brauzer cihaz bildirişlərini dəstəkləmir. Safari, Chrome və ya Edge-in yeni versiyasını yoxlayın.</p>}
       {pushState === "enabled" && <div className="flex items-center justify-between gap-3 border-b bg-emerald-50/60 px-4 py-3">
         <div><strong className="block text-xs text-emerald-900">Cihaz bildirişləri aktivdir</strong><span className="text-[11px] text-emerald-700">İndi real göndərişi yoxlaya bilərsiniz.</span></div>
         <button type="button" disabled={testing} onClick={() => void testPush()} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60">
