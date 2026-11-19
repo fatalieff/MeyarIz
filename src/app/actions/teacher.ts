@@ -724,8 +724,28 @@ export async function createExam(
       total_questions: input.totalQuestions,
       description: input.description || null,
     }));
-    const { error } = await supabase.from("examinations").insert(rows);
-    if (error) throw new Error("Sınaqlar yaradıla bilmədi.");
+    const { data: createdExams, error } = await supabase
+      .from("examinations")
+      .insert(rows)
+      .select("id,group_id");
+    if (error || !createdExams || createdExams.length !== rows.length)
+      throw new Error("Sınaqlar yaradıla bilmədi.");
+    const notificationResults = await Promise.all(
+      createdExams.map((exam) =>
+        notifyGroup(supabase, {
+          workspaceId,
+          groupId: exam.group_id,
+          type: "exam_created",
+          title: "Yeni sınaq yaradıldı",
+          body: `${input.title} · ${input.examDate} · ${input.totalQuestions} sual`,
+          link: "/student/dashboard",
+          eventKey: `exam-create:${exam.id}`,
+        }),
+      ),
+    );
+    const notificationFailed = notificationResults.some(
+      (result) => result.error,
+    );
     revalidatePath("/dashboard/exams");
     revalidatePath("/dashboard");
     input.groupIds.forEach((groupId) =>
@@ -733,7 +753,10 @@ export async function createExam(
     );
     return {
       ok: true,
-      message: `Sınaq ${input.groupIds.length} qrup üçün uğurla yaradıldı.`,
+      message: `Sınaq ${input.groupIds.length} qrup üçün yaradıldı və şagirdlərə bildiriş göndərildi.`,
+      warning: notificationFailed
+        ? "Sınaq yaradıldı, amma bəzi bildirişlər göndərilmədi."
+        : undefined,
     };
   } catch (e) {
     return { error: friendly(e) };
