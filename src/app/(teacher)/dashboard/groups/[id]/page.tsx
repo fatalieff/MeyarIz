@@ -18,7 +18,7 @@ import { FormPanel } from "@/components/ui/form-panel";
 import { DeleteGroupButton } from "@/components/groups/delete-group-button";
 import { getGroup } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
-import { azDate, azPercent } from "@/lib/utils";
+import { azDate, azPercent, isLightColor, cn } from "@/lib/utils";
 import {
   normalizeRankingPeriod,
   rankingPeriodLabels,
@@ -65,10 +65,18 @@ export default async function GroupDetail({
         <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <span
-              className="grid size-14 shrink-0 place-items-center rounded-2xl text-white shadow-sm"
-              style={{ backgroundColor: group.color }}
+              className={cn(
+                "grid size-14 shrink-0 place-items-center rounded-2xl shadow-sm transition-transform",
+                isLightColor(group.color)
+                  ? "border border-slate-300/80 ring-1 ring-slate-900/5 text-slate-900"
+                  : "text-white shadow-md"
+              )}
+              style={{
+                backgroundColor: group.color || "#4f46e5",
+                color: isLightColor(group.color) ? "#0f172a" : "#ffffff",
+              }}
             >
-              <Users />
+              <Users className="size-6" />
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">

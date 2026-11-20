@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, Users, X } from "lucide-react";
 import { cancelNextScheduleOccurrence, createExam, createGroup, createSchedule, createStudent, deleteSchedule, updateGroup, updateSchedule, updateStudent } from "@/app/actions/teacher";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { cn, isLightColor } from "@/lib/utils";
 
 const field = "focus-ring h-11 w-full rounded-xl border bg-white px-3 text-sm outline-none";
 const label = "space-y-1.5 text-sm font-semibold text-slate-700";
@@ -35,15 +36,148 @@ function ParentContactFields({ type, title, contact }: { type: "mother" | "fathe
   return <fieldset className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4"><legend className="px-2 text-sm font-bold text-slate-800">{title}</legend><div className="grid gap-3 sm:grid-cols-2"><label className={label}>Ad və soyad<input className={field} name={`${type}Name`} defaultValue={contact?.full_name || ""} placeholder={`${title}nın adı və soyadı`} /></label><label className={label}>Əlaqə nömrəsi<input className={field} name={`${type}Phone`} type="tel" inputMode="tel" autoComplete="tel" defaultValue={contact?.phone || ""} placeholder="+994 50 123 45 67" /></label></div></fieldset>;
 }
 
+const PRESET_COLORS = [
+  "#4f46e5", // İndigo
+  "#7c3aed", // Bənövşəyi
+  "#0284c7", // Mavi
+  "#059669", // Zümrüd
+  "#d97706", // Kəhrəba
+  "#e11d48", // Qırmızı
+  "#db2777", // Çəhrayı
+  "#475569", // Slate
+];
+
+function GroupColorField({ defaultValue = "#4f46e5" }: { defaultValue?: string }) {
+  const [color, setColor] = useState(defaultValue || "#4f46e5");
+  const isLight = isLightColor(color);
+
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-3">
+        {/* Canlı Önizləmə İkonu */}
+        <div
+          className={cn(
+            "grid size-11 place-items-center rounded-xl transition-colors shrink-0",
+            isLight
+              ? "border border-slate-300 ring-1 ring-slate-900/10 text-slate-900 shadow-2xs"
+              : "text-white shadow-sm"
+          )}
+          style={{
+            backgroundColor: color,
+            color: isLight ? "#0f172a" : "#ffffff",
+          }}
+          title="Qrup ikonunun görünüşü"
+        >
+          <Users className="size-5" />
+        </div>
+
+        {/* Xüsusi rəng seçici */}
+        <div className="flex flex-1 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 shadow-2xs">
+          <input
+            className="size-7 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+            type="color"
+            name="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+          />
+          <span className="font-mono text-xs font-semibold uppercase text-slate-700">
+            {color}
+          </span>
+          <span className="ml-auto text-[11px] text-slate-400 hidden sm:inline">
+            {isLight ? "Açıq rəng (tünd ikon)" : "Tünd rəng (ağ ikon)"}
+          </span>
+        </div>
+      </div>
+
+      {/* Hazır Tövsiyə Rənglər */}
+      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+        <span className="text-[11px] font-medium text-slate-500 mr-1">Tövsiyə rənglər:</span>
+        {PRESET_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setColor(c)}
+            className={cn(
+              "size-6 rounded-lg transition-transform hover:scale-110",
+              color.toLowerCase() === c.toLowerCase()
+                ? "ring-2 ring-indigo-500 ring-offset-2 scale-105"
+                : "opacity-85 hover:opacity-100"
+            )}
+            style={{ backgroundColor: c }}
+            title={c}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function GroupForm() {
   const [state, action, pending] = useActionState(createGroup, null);
-  return <form action={action} className="space-y-4"><label className={label}>Qrupun adı<input className={field} name="name" required placeholder="Məsələn, Abituriyent 2027" /></label><label className={label}>Hazırlıq səviyyəsi<input className={field} name="preparationLevel" placeholder="Məsələn, orta" /></label><label className={label}>Təsvir<textarea className="focus-ring min-h-24 w-full rounded-xl border p-3 text-sm outline-none" name="description" placeholder="Qrup haqqında qısa qeyd" /></label><label className={label}>Qrup rəngi<input className="h-11 w-full rounded-xl border p-1" type="color" name="color" defaultValue="#4f5fe7" /></label><Message state={state} /><Button disabled={pending} className="w-full">{pending ? "Yaradılır..." : "Qrup yarat"}</Button></form>;
+  return (
+    <form action={action} className="space-y-4">
+      <label className={label}>
+        Qrupun adı
+        <input className={field} name="name" required placeholder="Məsələn, Abituriyent 2027" />
+      </label>
+      <label className={label}>
+        Hazırlıq səviyyəsi
+        <input className={field} name="preparationLevel" placeholder="Məsələn, orta" />
+      </label>
+      <label className={label}>
+        Təsvir
+        <textarea
+          className="focus-ring min-h-24 w-full rounded-xl border p-3 text-sm outline-none"
+          name="description"
+          placeholder="Qrup haqqında qısa qeyd"
+        />
+      </label>
+      <div className={label}>
+        <span>Qrup rəngi və ikonu</span>
+        <GroupColorField defaultValue="#4f46e5" />
+      </div>
+      <Message state={state} />
+      <Button disabled={pending} className="w-full">
+        {pending ? "Yaradılır..." : "Qrup yarat"}
+      </Button>
+    </form>
+  );
 }
 
 export function GroupEditForm({ group }: { group: any }) {
   const action = updateGroup.bind(null, group.id);
   const [state, formAction, pending] = useActionState(action, null);
-  return <form action={formAction} className="grid gap-4 sm:grid-cols-2"><label className={label}>Qrupun adı<input className={field} name="name" required defaultValue={group.name} /></label><label className={label}>Hazırlıq səviyyəsi<input className={field} name="preparationLevel" defaultValue={group.preparation_level || ""} placeholder="Məsələn, orta" /></label><label className={`${label} sm:col-span-2`}>Təsvir<textarea className="focus-ring min-h-24 w-full rounded-xl border bg-white p-3 text-sm outline-none" name="description" defaultValue={group.description || ""} placeholder="Qrup haqqında qısa qeyd" /></label><label className={`${label} sm:col-span-2`}>Qrup rəngi<div className="mt-1.5 flex items-center gap-3 rounded-xl border bg-white p-2"><input className="size-10 cursor-pointer rounded-lg border-0 p-0" type="color" name="color" defaultValue={group.color || "#4f5fe7"} /><span className="text-xs font-normal text-slate-500">Cədvəl və qrup kartlarında istifadə olunur</span></div></label><div className="sm:col-span-2"><Message state={state} /></div><Button disabled={pending} className="sm:col-span-2">{pending ? "Yadda saxlanılır..." : "Dəyişiklikləri yadda saxla"}</Button></form>;
+  return (
+    <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+      <label className={label}>
+        Qrupun adı
+        <input className={field} name="name" required defaultValue={group.name} />
+      </label>
+      <label className={label}>
+        Hazırlıq səviyyəsi
+        <input className={field} name="preparationLevel" defaultValue={group.preparation_level || ""} placeholder="Məsələn, orta" />
+      </label>
+      <label className={`${label} sm:col-span-2`}>
+        Təsvir
+        <textarea
+          className="focus-ring min-h-24 w-full rounded-xl border bg-white p-3 text-sm outline-none"
+          name="description"
+          defaultValue={group.description || ""}
+          placeholder="Qrup haqqında qısa qeyd"
+        />
+      </label>
+      <div className={`${label} sm:col-span-2`}>
+        <span>Qrup rəngi və ikonu</span>
+        <GroupColorField defaultValue={group.color || "#4f46e5"} />
+      </div>
+      <div className="sm:col-span-2">
+        <Message state={state} />
+      </div>
+      <Button disabled={pending} className="sm:col-span-2">
+        {pending ? "Yadda saxlanılır..." : "Dəyişiklikləri yadda saxla"}
+      </Button>
+    </form>
+  );
 }
 
 export function StudentForm({ groups }: { groups: any[] }) {

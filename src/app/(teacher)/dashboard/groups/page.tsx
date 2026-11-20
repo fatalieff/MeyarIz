@@ -17,7 +17,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { getGroups } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
-import { cn } from "@/lib/utils";
+import { cn, isLightColor } from "@/lib/utils";
 
 export const instant = false;
 
@@ -238,6 +238,7 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
                 (s: any) => !s.is_extra
               );
               const groupColor = g.color || "#4f46e5";
+              const isLight = isLightColor(groupColor);
 
               return (
                 <Link
@@ -248,7 +249,10 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
                   {/* Qrupun Fərdi Rəng Zolağı */}
                   <div
                     aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-1.5 transition-all duration-300 group-hover:h-2"
+                    className={cn(
+                      "absolute inset-x-0 top-0 h-1.5 transition-all duration-300 group-hover:h-2",
+                      isLight && "border-b border-slate-300/80"
+                    )}
                     style={{ backgroundColor: groupColor }}
                   />
 
@@ -257,8 +261,16 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
                     <div className="flex items-start justify-between gap-3">
                       {/* Logo / Rəngli Nişan */}
                       <div
-                        className="grid size-12 shrink-0 place-items-center rounded-2xl text-white shadow-md transition-transform duration-300 group-hover:scale-105"
-                        style={{ backgroundColor: groupColor }}
+                        className={cn(
+                          "grid size-12 shrink-0 place-items-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-105",
+                          isLight
+                            ? "border border-slate-300/80 ring-1 ring-slate-900/5 text-slate-900"
+                            : "text-white shadow-md"
+                        )}
+                        style={{
+                          backgroundColor: groupColor,
+                          color: isLight ? "#0f172a" : "#ffffff",
+                        }}
                       >
                         <Users className="size-5" />
                       </div>
