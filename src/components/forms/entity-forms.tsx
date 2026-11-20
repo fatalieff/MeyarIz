@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { createExam, createGroup, createSchedule, createStudent, updateGroup, updateSchedule, updateStudent } from "@/app/actions/teacher";
+import { AlertTriangle, X } from "lucide-react";
+import { cancelNextScheduleOccurrence, createExam, createGroup, createSchedule, createStudent, deleteSchedule, updateGroup, updateSchedule, updateStudent } from "@/app/actions/teacher";
 import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -127,15 +128,55 @@ export function ScheduleForm({ groups }: { groups: any[] }) {
 export function ScheduleEditForm({ schedule }: { schedule: any }) {
   const action = updateSchedule.bind(null, schedule.id);
   const [state, formAction, pending] = useActionState(action, null);
+  const occurrenceAction = cancelNextScheduleOccurrence.bind(null, schedule.id);
+  const [occurrenceState, occurrenceFormAction, occurrencePending] = useActionState(occurrenceAction, null);
+  const cancelAction = deleteSchedule.bind(null, schedule.id);
+  const [cancelState, cancelFormAction, cancelPending] = useActionState(cancelAction, null);
+  const [confirmation, setConfirmation] = useState<"occurrence" | "permanent" | null>(null);
   const [startHour, startMinute] = schedule.start_time.slice(0, 5).split(":");
   const [endHour, endMinute] = schedule.end_time.slice(0, 5).split(":");
-  return <form action={formAction} className="grid gap-4 sm:grid-cols-2">
-    <div className="rounded-xl bg-slate-50 p-3 text-sm sm:col-span-2"><strong>{schedule.groups.name}</strong><span className="ml-2 text-slate-500">{schedule.is_extra ? "Əlavə dərs" : "Həftəlik dərs"}</span></div>
-    {schedule.is_extra && <div className={`${label} sm:col-span-2`}><span>Tarix</span><DatePicker name="sessionDate" defaultValue={schedule.session_date} ariaLabel="Əlavə dərsin yeni tarixi" /></div>}
-    <fieldset className="space-y-2"><legend className="text-xs font-semibold text-slate-500">Başlama</legend><div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><CustomSelect name="startHour" options={hours} defaultValue={startHour} ariaLabel="Başlama saatı"/><span className="font-bold text-slate-400">:</span><CustomSelect name="startMinute" options={minutes} defaultValue={startMinute} ariaLabel="Başlama dəqiqəsi"/></div></fieldset>
-    <fieldset className="space-y-2"><legend className="text-xs font-semibold text-slate-500">Bitmə</legend><div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><CustomSelect name="endHour" options={hours} defaultValue={endHour} ariaLabel="Bitmə saatı"/><span className="font-bold text-slate-400">:</span><CustomSelect name="endMinute" options={minutes} defaultValue={endMinute} ariaLabel="Bitmə dəqiqəsi"/></div></fieldset>
-    <label className={`${label} sm:col-span-2`}>Məkan<input className={field} name="location" defaultValue={schedule.location || ""} placeholder="İstəyə bağlı" /></label>
-    <div className="sm:col-span-2"><Message state={state}/></div>
-    <Button disabled={pending} className="sm:col-span-2">{pending ? "Yenilənir..." : "Dəyişikliyi yadda saxla və bildir"}</Button>
-  </form>;
+  return <div className="space-y-4">
+    <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+      <div className="rounded-xl bg-slate-50 p-3 text-sm sm:col-span-2"><strong>{schedule.groups.name}</strong><span className="ml-2 text-slate-500">{schedule.is_extra ? "Əlavə dərs" : "Həftəlik dərs"}</span></div>
+      {schedule.is_extra && <div className={`${label} sm:col-span-2`}><span>Tarix</span><DatePicker name="sessionDate" defaultValue={schedule.session_date} ariaLabel="Əlavə dərsin yeni tarixi" /></div>}
+      <fieldset className="space-y-2"><legend className="text-xs font-semibold text-slate-500">Başlama</legend><div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><CustomSelect name="startHour" options={hours} defaultValue={startHour} ariaLabel="Başlama saatı"/><span className="font-bold text-slate-400">:</span><CustomSelect name="startMinute" options={minutes} defaultValue={startMinute} ariaLabel="Başlama dəqiqəsi"/></div></fieldset>
+      <fieldset className="space-y-2"><legend className="text-xs font-semibold text-slate-500">Bitmə</legend><div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2"><CustomSelect name="endHour" options={hours} defaultValue={endHour} ariaLabel="Bitmə saatı"/><span className="font-bold text-slate-400">:</span><CustomSelect name="endMinute" options={minutes} defaultValue={endMinute} ariaLabel="Bitmə dəqiqəsi"/></div></fieldset>
+      <label className={`${label} sm:col-span-2`}>Məkan<input className={field} name="location" defaultValue={schedule.location || ""} placeholder="İstəyə bağlı" /></label>
+      <div className="sm:col-span-2"><Message state={state}/></div>
+      <Button disabled={pending} className="sm:col-span-2">{pending ? "Yenilənir..." : "Dəyişikliyi yadda saxla və bildir"}</Button>
+    </form>
+    {!schedule.is_extra && <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <span><strong className="block text-sm text-amber-950">Yalnız növbəti dərsi ləğv et</strong><span className="mt-1 block text-xs leading-5 text-amber-800">Növbəti dərs baş tutmayacaq, amma həftəlik vaxt cədvəldə qalacaq və gələn həftə yenidən davam edəcək.</span></span>
+        <button type="button" onClick={() => setConfirmation("occurrence")} disabled={occurrencePending || cancelPending} className="focus-ring shrink-0 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60">{occurrencePending ? "Ləğv edilir..." : "Yalnız növbəti dərsi ləğv et"}</button>
+      </div>
+      <Message state={occurrenceState}/>
+    </div>}
+    <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <span><strong className="block text-sm text-rose-900">{schedule.is_extra ? "Əlavə dərsi ləğv et" : "Cədvəldən tam çıxar"}</strong><span className="mt-1 block text-xs leading-5 text-rose-700">{schedule.is_extra ? "Əlavə dərs cədvəldən çıxarılacaq və şagirdlərə “Dərs ləğv edildi” bildirişi gedəcək." : "Təkrarlanan dərs bütün gələcək həftələr üçün cədvəldən çıxarılacaq və şagirdlərə “Dərs ləğv edildi” bildirişi gedəcək."}</span></span>
+        <button type="button" onClick={() => setConfirmation("permanent")} disabled={cancelPending || occurrencePending} className="focus-ring shrink-0 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60">{cancelPending ? "Ləğv edilir..." : schedule.is_extra ? "Əlavə dərsi ləğv et" : "Cədvəldən tam çıxar"}</button>
+      </div>
+      <Message state={cancelState}/>
+    </div>
+    {confirmation && <div role="dialog" aria-modal="true" aria-labelledby="schedule-confirmation-title" aria-describedby="schedule-confirmation-description" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-xs animate-in fade-in">
+      <div className={`w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl ${confirmation === "occurrence" ? "border-amber-200" : "border-rose-200"}`}>
+        <div className={`flex items-start justify-between gap-3 border-b pb-4 ${confirmation === "occurrence" ? "border-amber-100" : "border-rose-100"}`}>
+          <div className="flex items-center gap-3">
+            <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${confirmation === "occurrence" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-600"}`}><AlertTriangle className="size-5"/></div>
+            <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Təsdiq tələb olunur</p><h3 id="schedule-confirmation-title" className="mt-0.5 text-base font-bold text-slate-900">{confirmation === "occurrence" ? "Növbəti dərs ləğv edilsin?" : schedule.is_extra ? "Əlavə dərs ləğv edilsin?" : "Dərs cədvəldən tam çıxarılsın?"}</h3></div>
+          </div>
+          <button type="button" onClick={() => setConfirmation(null)} className="focus-ring rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Popup-u bağla"><X className="size-4"/></button>
+        </div>
+        <div id="schedule-confirmation-description" className={`mt-4 rounded-xl border p-4 text-sm leading-6 ${confirmation === "occurrence" ? "border-amber-100 bg-amber-50/70 text-amber-950" : "border-rose-100 bg-rose-50/70 text-rose-950"}`}>
+          {confirmation === "occurrence" ? "Yalnız növbəti dərs baş tutmayacaq. Həftəlik dərs vaxtı cədvəldə qalacaq, gələn həftə yenidən davam edəcək və şagirdlərə bildiriş göndəriləcək." : schedule.is_extra ? "Bu əlavə dərs cədvəldən çıxarılacaq və şagirdlərə “Dərs ləğv edildi” bildirişi göndəriləcək." : "Bu təkrarlanan dərs bütün gələcək həftələr üçün cədvəldən çıxarılacaq və şagirdlərə “Dərs ləğv edildi” bildirişi göndəriləcək."}
+        </div>
+        <p className="mt-4 text-sm font-medium text-slate-600">Davam etmək istəyirsiniz?</p>
+        <form action={confirmation === "occurrence" ? occurrenceFormAction : cancelFormAction} onSubmit={() => setConfirmation(null)} className="mt-6 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+          <button type="button" onClick={() => setConfirmation(null)} className="focus-ring rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Xeyr</button>
+          <button type="submit" className={`focus-ring rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition ${confirmation === "occurrence" ? "bg-amber-600 hover:bg-amber-700" : "bg-rose-600 hover:bg-rose-700"}`}>{confirmation === "occurrence" ? "Bəli, növbəti dərsi ləğv et" : schedule.is_extra ? "Bəli, əlavə dərsi ləğv et" : "Bəli, cədvəldən çıxar"}</button>
+        </form>
+      </div>
+    </div>}
+  </div>;
 }

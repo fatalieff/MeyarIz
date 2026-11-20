@@ -3,7 +3,7 @@ import "server-only";
 import * as webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type NotificationType = "schedule_created" | "schedule_updated" | "extra_lesson" | "exam_created" | "exam_result";
+export type NotificationType = "schedule_created" | "schedule_updated" | "schedule_cancelled" | "schedule_occurrence_cancelled" | "extra_lesson" | "exam_created" | "exam_result" | "exam_result_updated";
 
 type NotificationInput = {
   workspaceId: string;
@@ -13,6 +13,10 @@ type NotificationInput = {
   body: string;
   link: string;
   eventKey: string;
+};
+
+type StudentNotificationInput = Omit<NotificationInput, "groupId"> & {
+  studentIds: string[];
 };
 
 type PushTarget = {
@@ -98,11 +102,50 @@ export async function notifyGroup(supabase: SupabaseClient, input: NotificationI
   }
   if (!memberships?.length) return { recipients: 0, targets: 0, sent: 0, failed: 0 };
 
-  const notificationIds = memberships.map(() => crypto.randomUUID());
-  const rows = memberships.map((membership, index) => ({
+  return insertNotifications(
+    supabase,
+    input,
+    memberships.map((membership) => membership.student_id),
+  );
+}
+
+export async function notifyStudents(
+  supabase: SupabaseClient,
+  input: StudentNotificationInput,
+) {
+  const studentIds = [...new Set(input.studentIds)];
+  if (!studentIds.length) return { recipients: 0, targets: 0, sent: 0, failed: 0 };
+
+  const { data: students, error: studentError } = await supabase
+    .from("students")
+    .select("id")
+    .in("id", studentIds)
+    .eq("workspace_id", input.workspaceId)
+    .eq("status", "active");
+  if (studentError) {
+    console.error("[notifications] Students could not be loaded:", studentError);
+    return { recipients: 0, ...await sendWebPush(supabase, []), error: "Şagirdlər yüklənmədi." };
+  }
+
+  return insertNotifications(
+    supabase,
+    input,
+    (students || []).map((student) => student.id),
+  );
+}
+
+async function insertNotifications(
+  supabase: SupabaseClient,
+  input: Omit<NotificationInput, "groupId">,
+  studentIds: string[],
+) {
+  if (!studentIds.length) return { recipients: 0, targets: 0, sent: 0, failed: 0 };
+
+  const notificationIds = studentIds.map(() => crypto.randomUUID());
+  const rows = studentIds.map((studentId, index) => ({
     id: notificationIds[index],
     workspace_id: input.workspaceId,
-    student_id: membership.student_id,
+    student_id: studentId,
     type: input.type,
     title: input.title,
     body: input.body,

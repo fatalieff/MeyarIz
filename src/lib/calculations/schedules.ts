@@ -23,3 +23,19 @@ export function weekdayFromDate(date:string){
   const day=new Date(`${date}T00:00:00Z`).getUTCDay();
   return day===0?7:day;
 }
+
+export function nextScheduleOccurrenceDate(
+  weekday:number,
+  endTime:string,
+  now=new Date(),
+){
+  const current=bakuDateTime(now);
+  const currentWeekday=weekdayFromDate(current.date);
+  let daysAhead=(weekday-currentWeekday+7)%7;
+
+  if(daysAhead===0&&endTime.slice(0,5)<=current.time.slice(0,5)) daysAhead=7;
+
+  const occurrence=new Date(`${current.date}T00:00:00Z`);
+  occurrence.setUTCDate(occurrence.getUTCDate()+daysAhead);
+  return occurrence.toISOString().slice(0,10);
+}

@@ -69,7 +69,7 @@ export async function getSchedules() {
   const { data } = await ctx.supabase
     .from("group_schedules")
     .select(
-      "id,weekday,start_time,end_time,location,is_extra,session_date,groups!inner(id,name,color,workspace_id,group_memberships(count))",
+      "id,weekday,start_time,end_time,location,is_extra,session_date,group_schedule_cancellations(occurrence_date),groups!inner(id,name,color,workspace_id,group_memberships(count))",
     )
     .eq("groups.workspace_id", ctx.ws.id)
     .order("weekday")

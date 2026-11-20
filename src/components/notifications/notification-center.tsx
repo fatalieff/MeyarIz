@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/browser";
 
 type NotificationItem = {
   id: string;
-  type: "schedule_created" | "schedule_updated" | "extra_lesson" | "exam_created" | "exam_result" | "test";
+  type: "schedule_created" | "schedule_updated" | "schedule_cancelled" | "schedule_occurrence_cancelled" | "extra_lesson" | "exam_created" | "exam_result" | "exam_result_updated" | "test";
   title: string;
   body: string;
   link: string;

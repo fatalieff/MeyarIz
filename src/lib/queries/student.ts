@@ -17,7 +17,7 @@ export async function getStudentData() {
   const { data: student } = await supabase
     .from("students")
     .select(
-      "id,workspace_id,full_name,email,phone,auth_user_id,group_memberships!inner(active,groups(id,name,color,group_schedules(id,weekday,start_time,end_time,location,is_extra,session_date))),exam_results(correct_answers,normalized_score,examinations(id,title,exam_date,total_questions)),student_achievements(earned_at,achievements(code,name_az,description_az,icon))",
+      "id,workspace_id,full_name,email,phone,auth_user_id,group_memberships!inner(active,groups(id,name,color,group_schedules(id,weekday,start_time,end_time,location,is_extra,session_date,group_schedule_cancellations(occurrence_date)))),exam_results(correct_answers,normalized_score,examinations(id,title,exam_date,total_questions)),student_achievements(earned_at,achievements(code,name_az,description_az,icon))",
     )
     .eq("auth_user_id", userId)
     .eq("group_memberships.active", true)

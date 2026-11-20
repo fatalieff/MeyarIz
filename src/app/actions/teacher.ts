@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   bakuDateTime,
+  nextScheduleOccurrenceDate,
   weekDays,
   weekdayFromDate,
 } from "@/lib/calculations/schedules";
-import { notifyGroup } from "@/lib/notifications/server";
-import { buildExamNotificationBody } from "@/lib/notifications/exam";
+import { notifyGroup, notifyStudents } from "@/lib/notifications/server";
+import { classifyResultChanges } from "@/lib/notifications/result-changes";
+import { buildExamNotificationBody, formatAzDate } from "@/lib/notifications/exam";
 import {
   examSchema,
   groupIdSchema,
@@ -615,10 +617,100 @@ export async function createSchedule(
     return { error: friendly(e) };
   }
 }
-export async function deleteSchedule(id: string) {
-  const { supabase } = await context();
-  await supabase.from("group_schedules").delete().eq("id", id);
-  revalidatePath("/dashboard/schedule");
+export async function deleteSchedule(id: string): Promise<Result> {
+  try {
+    const { supabase, workspaceId } = await context();
+    const { data: schedule } = await supabase
+      .from("group_schedules")
+      .select("id,group_id,weekday,start_time,end_time,is_extra,session_date,groups!inner(name,workspace_id)")
+      .eq("id", id)
+      .eq("groups.workspace_id", workspaceId)
+      .maybeSingle();
+    if (!schedule) throw new Error("Dərs tapılmadı.");
+
+    const { error } = await supabase.from("group_schedules").delete().eq("id", id);
+    if (error) throw new Error("Dərs ləğv edilə bilmədi.");
+
+    const group = Array.isArray(schedule.groups) ? schedule.groups[0] : schedule.groups;
+    const details = schedule.is_extra
+      ? `${schedule.session_date} · ${schedule.start_time.slice(0, 5)}–${schedule.end_time.slice(0, 5)}`
+      : `${weekDays[schedule.weekday]} · ${schedule.start_time.slice(0, 5)}–${schedule.end_time.slice(0, 5)}`;
+    const notification = await notifyGroup(supabase, {
+      workspaceId,
+      groupId: schedule.group_id,
+      type: "schedule_cancelled",
+      title: "Dərs ləğv edildi",
+      body: `${group?.name || "Qrup"}: ${details}`,
+      link: "/student/schedule",
+      eventKey: `schedule-cancel:${schedule.id}`,
+    });
+
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/groups/${schedule.group_id}`);
+    revalidatePath("/student/schedule");
+    revalidatePath("/student/dashboard");
+    return {
+      ok: true,
+      message: "Dərs ləğv edildi və şagirdlərə bildiriş göndərildi.",
+      warning: notification.error
+        ? "Dərs ləğv edildi, amma bildiriş göndərilə bilmədi."
+        : undefined,
+    };
+  } catch (e) {
+    return { error: friendly(e) };
+  }
+}
+export async function cancelNextScheduleOccurrence(id: string): Promise<Result> {
+  try {
+    const { supabase, workspaceId } = await context();
+    const { data: schedule } = await supabase
+      .from("group_schedules")
+      .select("id,group_id,weekday,start_time,end_time,is_extra,groups!inner(name,workspace_id)")
+      .eq("id", id)
+      .eq("groups.workspace_id", workspaceId)
+      .maybeSingle();
+    if (!schedule) throw new Error("Dərs tapılmadı.");
+    if (schedule.is_extra)
+      throw new Error("Birdəfəlik ləğv yalnız həftəlik dərslər üçün mümkündür.");
+
+    const occurrenceDate = nextScheduleOccurrenceDate(
+      schedule.weekday,
+      schedule.end_time,
+    );
+    const { error } = await supabase
+      .from("group_schedule_cancellations")
+      .insert({ schedule_id: schedule.id, occurrence_date: occurrenceDate });
+    if (error?.code === "23505")
+      throw new Error("Növbəti dərs artıq birdəfəlik ləğv edilib.");
+    if (error) throw new Error("Növbəti dərs ləğv edilə bilmədi.");
+
+    const group = Array.isArray(schedule.groups) ? schedule.groups[0] : schedule.groups;
+    const notification = await notifyGroup(supabase, {
+      workspaceId,
+      groupId: schedule.group_id,
+      type: "schedule_occurrence_cancelled",
+      title: "Növbəti dərs ləğv edildi",
+      body: `${group?.name || "Qrup"}: ${formatAzDate(occurrenceDate)} · ${weekDays[schedule.weekday]} · ${schedule.start_time.slice(0, 5)}–${schedule.end_time.slice(0, 5)}. Dərs gələn həftə cədvəl üzrə davam edəcək.`,
+      link: "/student/schedule",
+      eventKey: `schedule-occurrence-cancel:${schedule.id}:${occurrenceDate}`,
+    });
+
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/groups/${schedule.group_id}`);
+    revalidatePath("/student/schedule");
+    revalidatePath("/student/dashboard");
+    return {
+      ok: true,
+      message: `${formatAzDate(occurrenceDate)} tarixli dərs ləğv edildi. Həftəlik cədvəl saxlanıldı.`,
+      warning: notification.error
+        ? "Dərs birdəfəlik ləğv edildi, amma bildiriş göndərilə bilmədi."
+        : undefined,
+    };
+  } catch (e) {
+    return { error: friendly(e) };
+  }
 }
 export async function updateSchedule(
   scheduleId: string,
@@ -795,20 +887,62 @@ export async function saveResults(
         };
       });
     if (rows.length) {
+      const { data: existingResults, error: existingResultsError } = await supabase
+        .from("exam_results")
+        .select("student_id,correct_answers")
+        .eq("examination_id", examinationId);
+      if (existingResultsError)
+        throw new Error("Mövcud nəticələr yoxlanıla bilmədi.");
+
+      const {
+        changedRows,
+        newlyPublishedStudentIds,
+        updatedStudentIds,
+      } = classifyResultChanges(rows, existingResults || []);
+      if (!changedRows.length) {
+        return { ok: true, message: "Dəyişiklik yoxdur." };
+      }
+
       const { error } = await supabase
         .from("exam_results")
-        .upsert(rows, { onConflict: "examination_id,student_id" });
+        .upsert(changedRows, { onConflict: "examination_id,student_id" });
       if (error) throw new Error("Nəticələr saxlanıla bilmədi.");
       const group = Array.isArray(exam.groups) ? exam.groups[0] : exam.groups;
-      await notifyGroup(supabase, {
-        workspaceId,
-        groupId: exam.group_id,
-        type: "exam_result",
-        title: "Sınaq nəticəsi açıqlandı",
-        body: `${exam.title} · ${group?.name || "Qrup"}. Nəticənə indi bax.`,
-        link: "/student/results",
-        eventKey: `exam-result:${examinationId}`,
-      });
+      const notificationVersion = Date.now();
+
+      if (!existingResults?.length) {
+        await notifyGroup(supabase, {
+          workspaceId,
+          groupId: exam.group_id,
+          type: "exam_result",
+          title: "Sınaq nəticəsi açıqlandı",
+          body: `${exam.title} · ${group?.name || "Qrup"}. Nəticənə indi bax.`,
+          link: "/student/results",
+          eventKey: `exam-result:${examinationId}`,
+        });
+      } else if (newlyPublishedStudentIds.length) {
+        await notifyStudents(supabase, {
+          workspaceId,
+          studentIds: newlyPublishedStudentIds,
+          type: "exam_result",
+          title: "Sınaq nəticəsi açıqlandı",
+          body: `${exam.title} · Nəticənə indi bax.`,
+          link: "/student/results",
+          eventKey: `exam-result-published:${examinationId}:${notificationVersion}`,
+        });
+      }
+
+      if (updatedStudentIds.length) {
+        await notifyStudents(supabase, {
+          workspaceId,
+          studentIds: updatedStudentIds,
+          type: "exam_result_updated",
+          title: "Sınaq nəticəsi yeniləndi",
+          body: `${exam.title} · Yenilənmiş nəticənə indi bax.`,
+          link: "/student/results",
+          eventKey: `exam-result-update:${examinationId}:${notificationVersion}`,
+        });
+      }
     }
     revalidatePath(`/dashboard/exams/${examinationId}`);
     revalidatePath("/student/results");

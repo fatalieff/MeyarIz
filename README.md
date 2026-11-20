@@ -149,7 +149,7 @@ Hosted funksiyanın adı `invite-student`-dır və JWT yoxlaması aktivdir. Funk
 
 ## Realtime və cihaz bildirişləri
 
-Yeni dərs saatı, dərs vaxtı dəyişikliyi, əlavə dərs və sınaq nəticəsinin ilk açıqlanması qrup şagirdləri üçün `notifications` sətri yaradır. Açıq saytda Supabase Realtime bu sətirləri dərhal navbar bildiriş mərkəzinə gətirir. Şagird “Cihaz bildirişlərini aktiv et” düyməsi ilə icazə verdikdən sonra `public/sw.js` service worker-i saytdan kənarda da Web Push bildirişi göstərir.
+Yeni dərs saatı, dərs vaxtı dəyişikliyi, əlavə dərs, dərsin ləğvi və sınaq nəticəsinin ilk açıqlanması qrup şagirdləri üçün `notifications` sətri yaradır. Həftəlik dərs üçün iki ləğv rejimi var: “Yalnız növbəti dərsi ləğv et” konkret tarixi `group_schedule_cancellations` cədvəlinə yazır, əsas həftəlik vaxtı saxlayır və şagirdə dərsin gələn həftə davam edəcəyini bildirir; “Cədvəldən tam çıxar” isə təkrarlanan vaxtı silir və “Dərs ləğv edildi” bildirişi göndərir. Mövcud sınaq nəticəsi dəyişdirildikdə yalnız nəticəsi həqiqətən dəyişən şagirdə ayrıca “Sınaq nəticəsi yeniləndi” bildirişi göndərilir; eyni nəticənin təkrar saxlanması bildiriş yaratmır. Açıq saytda Supabase Realtime bu sətirləri dərhal navbar bildiriş mərkəzinə gətirir. Şagird “Cihaz bildirişlərini aktiv et” düyməsi ilə icazə verdikdən sonra `public/sw.js` service worker-i saytdan kənarda da Web Push bildirişi göstərir.
 
 Aktivləşdirmədən sonra ayrıca test göndərişi və ya cihaz statusu paneli göstərilmir. Müəllim yeni sınaq yaradanda bildiriş kartı `event_key` daxilindəki sınaq ID-si ilə `examinations` cədvəlindən cari adı, tarixi, sual sayını və `description` açıqlamasını oxuyur. Açıqlama boş saxlanarsa bildiriş bunu aydın şəkildə qeyd edir. Köhnə sınaq bildirişlərindəki məlumatlar da eyni strukturlaşdırılmış kart görünüşünə çevrilir. Şagird RLS vasitəsilə yalnız aktiv üzvü olduğu qrupların sınaqlarını oxuya bilər.
 
@@ -194,6 +194,7 @@ Edge Function lokal inkişaf üçün `http://localhost:3000` fallback-ından ist
 | `teacher_settings` | Müəllim parametrləri |
 | `groups` | Tədris qrupları |
 | `group_schedules` | Həftəlik dərs saatları |
+| `group_schedule_cancellations` | Təkrarlanan dərslərin konkret tarix üçün birdəfəlik ləğvləri |
 | `students` | Şagird profili və Auth bağlantısı |
 | `group_memberships` | Aktiv və tarixi qrup üzvlükləri |
 | `parent_contacts` | Valideyn/qəyyum əlaqələri |
