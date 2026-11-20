@@ -28,6 +28,10 @@ body {
   letter-spacing: -.012em;
 }
 
+@supports (min-height: 100dvh) {
+  body { min-height: 100dvh; }
+}
+
 * { border-color: var(--line); }
 ::selection { background: #e0e7ff; color: #1e1b4b; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -37,7 +41,7 @@ button, input, select, textarea { font: inherit; }
 .app-sidebar { width: 292px; transition: width .2s ease; }
 .app-sidebar-panel { position: relative; z-index: 40; width: 292px; transition: width .2s ease, box-shadow .2s ease; }
 .sidebar-label { opacity: 1; max-width: 260px; transition: opacity .12s ease, max-width .2s ease; }
-.dashboard-stage > main { width: 100%; max-width: 1600px; margin-inline: auto; padding-bottom: 7rem; }
+.dashboard-stage > main { width: 100%; max-width: 1600px; margin-inline: auto; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
 
 /* Navbar brand: gizli (Açıq və Yığılmış şaquli menyuda qətiyyən navbarda loqo görünməsin) */
 .navbar-brand-container {

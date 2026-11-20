@@ -12,9 +12,9 @@ export async function AppHeader({title,role="teacher"}:{title:string;userName?:s
   const profile=await getSessionProfile();
   const userName=profile?.full_name??(role==="teacher"?"Müəllim":"Şagird");
   const homeHref=navigationHome(role as NavigationRole);
-  return <header className="app-header sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 px-5 backdrop-blur-md md:px-8">
+  return <header className="app-header sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md sm:px-5 md:px-8">
     <div className="mx-auto max-w-[1536px]">
-    <div className="flex h-20 items-center gap-4">
+    <div className="flex h-20 items-center gap-2 sm:gap-4">
       <div className="navbar-brand-container shrink-0 items-center gap-3">
         <Link
           href={homeHref}

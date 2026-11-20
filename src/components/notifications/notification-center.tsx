@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BellRing, CalendarDays, CheckCheck, ChevronRight, Clock3, Share, Smartphone } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Bell, BellRing, CalendarDays, CheckCheck, ChevronRight, Clock3, Share, Smartphone, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { examinationIdFromEventKey, formatAzDate, parseExamNotificationBody } from "@/lib/notifications/exam";
 import { createClient } from "@/lib/supabase/browser";
 
@@ -66,7 +67,10 @@ export function NotificationCenter() {
   const [enabling, setEnabling] = useState(false);
   const [pushMessage, setPushMessage] = useState<string>();
   const [needsIosInstall, setNeedsIosInstall] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const container = useRef<HTMLDivElement>(null);
+  const panelContainer = useRef<HTMLDivElement>(null);
+  const panelId = useId();
   const unread = useMemo(() => items.filter((item) => !item.read_at).length, [items]);
 
   useEffect(() => {
@@ -162,8 +166,34 @@ export function NotificationCenter() {
   }, []);
 
   useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const syncViewport = () => setIsMobile(media.matches);
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    if (isMobile) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("keydown", closeOnEscape);
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isMobile, open]);
+
+  useEffect(() => {
     const close = (event: MouseEvent) => {
-      if (container.current && !container.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (container.current && !container.current.contains(target) && !panelContainer.current?.contains(target)) setOpen(false);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -221,15 +251,25 @@ export function NotificationCenter() {
     if (!error) setItems((current) => current.map((item) => ids.includes(item.id) ? { ...item, read_at: readAt } : item));
   };
 
-  return <div ref={container} className="relative">
-    <button type="button" onClick={() => setOpen((value) => !value)} aria-label={unread ? `${unread} oxunmamış bildiriş` : "Bildirişlər"} aria-expanded={open} className="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
-      {unread ? <BellRing className="size-4.5"/> : <Bell className="size-4.5"/>}
-      {unread > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-5 text-white">{unread > 9 ? "9+" : unread}</span>}
-    </button>
-    {open && <div className="absolute right-0 top-12 z-50 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15">
+  const panel = open && <>
+    {isMobile && <button type="button" aria-label="Bildirişləri bağla" onClick={() => setOpen(false)} className="fixed inset-0 z-[70] bg-slate-950/35 backdrop-blur-[2px]"/>}
+    <div
+      ref={panelContainer}
+      id={panelId}
+      role="dialog"
+      aria-modal={isMobile || undefined}
+      aria-label="Bildirişlər"
+      style={isMobile ? { bottom: "max(0.5rem, env(safe-area-inset-bottom))", maxHeight: "calc(100dvh - 5.5rem - env(safe-area-inset-bottom))" } : undefined}
+      className={isMobile
+        ? "fixed inset-x-2 z-[80] flex flex-col overflow-hidden rounded-[1.6rem] border border-white/70 bg-white shadow-2xl shadow-slate-950/30"
+        : "absolute right-0 top-12 z-50 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"}
+    >
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div><strong className="text-sm text-slate-900">Bildirişlər</strong><p className="text-xs text-slate-500">{unread ? `${unread} yeni bildiriş` : "Hamısı oxunub"}</p></div>
-        {unread > 0 && <button type="button" onClick={() => void markRead(items.filter((item) => !item.read_at).map((item) => item.id))} className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600"><CheckCheck className="size-3.5"/>Hamısını oxu</button>}
+        <div className="flex items-center gap-2">
+          {unread > 0 && <button type="button" onClick={() => void markRead(items.filter((item) => !item.read_at).map((item) => item.id))} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"><CheckCheck className="size-3.5"/>Hamısını oxu</button>}
+          {isMobile && <button type="button" onClick={() => setOpen(false)} aria-label="Bağla" className="grid size-9 place-items-center rounded-xl bg-slate-100 text-slate-600"><X className="size-4.5"/></button>}
+        </div>
       </div>
       {needsIosInstall && <div className="border-b bg-amber-50/80 p-3">
         <div className="flex gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-amber-200">
@@ -245,7 +285,7 @@ export function NotificationCenter() {
       </div>}
       {!needsIosInstall && pushState === "unsupported" && <p className="border-b bg-amber-50 px-4 py-3 text-[11px] leading-4 text-amber-800">Bu brauzer cihaz bildirişlərini dəstəkləmir. Safari, Chrome və ya Edge-in yeni versiyasını yoxlayın.</p>}
       {pushMessage && pushState !== "enabled" && <p className="border-b bg-slate-50 px-4 py-2 text-[11px] leading-4 text-slate-600">{pushMessage}</p>}
-      <div className="max-h-[25rem] overflow-y-auto">
+      <div className={isMobile ? "min-h-0 flex-1 overscroll-contain overflow-y-auto" : "max-h-[25rem] overflow-y-auto"}>
         {items.length ? items.map((item) => {
           const parsedExamDetails = item.type === "exam_created"
             ? parseExamNotificationBody(item.body)
@@ -272,10 +312,10 @@ export function NotificationCenter() {
                     <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700"><CalendarDays className="size-3"/>{examDetails.date}</span>
                     {examDetails.questionCount !== null && <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">{examDetails.questionCount} sual</span>}
                   </span>
-                  {examDetails.description && <span className="mt-2 block border-l-2 border-indigo-200 pl-2.5 text-xs leading-5 text-slate-600">{examDetails.description}</span>}
+                  {examDetails.description && <span className="mt-2 block break-words border-l-2 border-indigo-200 pl-2.5 text-xs leading-5 text-slate-600 [overflow-wrap:anywhere]">{examDetails.description}</span>}
                 </> : <>
                   <span className="flex items-center gap-2"><strong className="block text-sm text-slate-900">{item.title}</strong>{!item.read_at && <span className="size-1.5 rounded-full bg-indigo-500"/>}</span>
-                  <span className="mt-1 block whitespace-pre-line text-xs leading-5 text-slate-600">{item.body}</span>
+                  <span className="mt-1 block whitespace-pre-line break-words text-xs leading-5 text-slate-600 [overflow-wrap:anywhere]">{item.body}</span>
                 </>}
                 <span className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
                   <time className="flex items-center gap-1 text-[10px] font-medium text-slate-400"><Clock3 className="size-3"/>{formatNotificationTime(item.created_at)}</time>
@@ -286,6 +326,14 @@ export function NotificationCenter() {
           </Link>;
         }) : <div className="px-5 py-10 text-center"><Bell className="mx-auto size-7 text-slate-300"/><p className="mt-2 text-sm font-semibold text-slate-600">Hələ bildiriş yoxdur</p><p className="mt-1 text-xs text-slate-400">Yeni dərs və nəticələr burada görünəcək.</p></div>}
       </div>
-    </div>}
+    </div>
+  </>;
+
+  return <div ref={container} className="relative">
+    <button type="button" onClick={() => setOpen((value) => !value)} aria-label={unread ? `${unread} oxunmamış bildiriş` : "Bildirişlər"} aria-expanded={open} aria-controls={panelId} className="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
+      {unread ? <BellRing className="size-4.5"/> : <Bell className="size-4.5"/>}
+      {unread > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-5 text-white">{unread > 9 ? "9+" : unread}</span>}
+    </button>
+    {isMobile && panel ? createPortal(panel, document.body) : panel}
   </div>;
 }

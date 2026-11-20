@@ -190,7 +190,11 @@ export function Sidebar({ role = "teacher" }: { role?: NavigationRole }) {
       {/* Mobil Alt Zolaq */}
       <nav
         aria-label="Mobil naviqasiya"
-        className="fixed inset-x-3 bottom-3 z-50 flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.12] bg-[#090d16]/95 p-1.5 shadow-2xl backdrop-blur-2xl scrollbar-none lg:hidden"
+        className={cn(
+          "fixed inset-x-3 z-50 items-center gap-1 rounded-2xl border border-white/[0.12] bg-[#090d16]/95 p-1.5 shadow-2xl backdrop-blur-2xl lg:hidden",
+          role === "student" ? "grid grid-cols-6" : "flex overflow-x-auto scrollbar-none",
+        )}
+        style={{ bottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         {nav.map(([href, label, Icon]) => {
           const active = isNavigationActive(path, href);
@@ -199,7 +203,8 @@ export function Sidebar({ role = "teacher" }: { role?: NavigationRole }) {
               key={href}
               href={href}
               className={cn(
-                "focus-ring relative flex min-w-[68px] flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold transition-all duration-150",
+                "focus-ring relative flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-semibold transition-all duration-150",
+                role === "student" ? "min-w-0 px-1" : "min-w-[68px] px-2",
                 active
                   ? "bg-indigo-600/20 text-white"
                   : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
@@ -209,7 +214,7 @@ export function Sidebar({ role = "teacher" }: { role?: NavigationRole }) {
                 className={cn("size-4", active ? "text-indigo-400" : "text-slate-400")}
                 strokeWidth={active ? 2.3 : 1.8}
               />
-              <span className="max-w-16 truncate">{label}</span>
+              <span className="w-full truncate text-center">{label}</span>
               {active && (
                 <span className="absolute bottom-1 size-1 rounded-full bg-indigo-400" />
               )}
