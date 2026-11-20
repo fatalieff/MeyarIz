@@ -151,6 +151,8 @@ Hosted funksiyanın adı `invite-student`-dır və JWT yoxlaması aktivdir. Funk
 
 Yeni dərs saatı, dərs vaxtı dəyişikliyi, əlavə dərs və sınaq nəticəsinin ilk açıqlanması qrup şagirdləri üçün `notifications` sətri yaradır. Açıq saytda Supabase Realtime bu sətirləri dərhal navbar bildiriş mərkəzinə gətirir. Şagird “Cihaz bildirişlərini aktiv et” düyməsi ilə icazə verdikdən sonra `public/sw.js` service worker-i saytdan kənarda da Web Push bildirişi göstərir.
 
+Aktivləşdirmədən sonra ayrıca test göndərişi və ya cihaz statusu paneli göstərilmir. Müəllim yeni sınaq yaradanda bildiriş kartı `event_key` daxilindəki sınaq ID-si ilə `examinations` cədvəlindən cari adı, tarixi, sual sayını və `description` açıqlamasını oxuyur. Açıqlama boş saxlanarsa bildiriş bunu aydın şəkildə qeyd edir. Köhnə sınaq bildirişlərindəki məlumatlar da eyni strukturlaşdırılmış kart görünüşünə çevrilir. Şagird RLS vasitəsilə yalnız aktiv üzvü olduğu qrupların sınaqlarını oxuya bilər.
+
 Production mühitində sayt HTTPS üzərindən işləməli və `.env.local`-dakı eyni VAPID cütü hostinqin environment dəyişənlərinə əlavə edilməlidir. VAPID açarlarını dəyişmək mövcud cihaz abunəliklərinin yenidən aktivləşdirilməsini tələb edir.
 
 ## Şagird və Auth hesabının silinməsi

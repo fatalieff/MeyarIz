@@ -9,6 +9,7 @@ import {
   weekdayFromDate,
 } from "@/lib/calculations/schedules";
 import { notifyGroup } from "@/lib/notifications/server";
+import { buildExamNotificationBody } from "@/lib/notifications/exam";
 import {
   examSchema,
   groupIdSchema,
@@ -736,8 +737,8 @@ export async function createExam(
           workspaceId,
           groupId: exam.group_id,
           type: "exam_created",
-          title: "Yeni sınaq yaradıldı",
-          body: `${input.title} · ${input.examDate} · ${input.totalQuestions} sual`,
+          title: input.title,
+          body: buildExamNotificationBody(input.examDate, input.description),
           link: "/student/dashboard",
           eventKey: `exam-create:${exam.id}`,
         }),

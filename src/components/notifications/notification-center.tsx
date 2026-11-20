@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, BellRing, CheckCheck, LoaderCircle, Send, Share, Smartphone } from "lucide-react";
+import { Bell, BellRing, CalendarDays, CheckCheck, ChevronRight, Clock3, Share, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { sendTestNotification } from "@/app/actions/notifications";
+import { examinationIdFromEventKey, formatAzDate, parseExamNotificationBody } from "@/lib/notifications/exam";
 import { createClient } from "@/lib/supabase/browser";
 
 type NotificationItem = {
@@ -12,8 +12,17 @@ type NotificationItem = {
   title: string;
   body: string;
   link: string;
+  event_key: string;
   read_at: string | null;
   created_at: string;
+};
+
+type ExaminationDetails = {
+  id: string;
+  title: string;
+  exam_date: string;
+  total_questions: number;
+  description: string | null;
 };
 
 function urlBase64ToUint8Array(value: string) {
@@ -30,20 +39,31 @@ function subscriptionUsesKey(subscription: PushSubscription, publicKey: string) 
   return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
 }
 
-const timeFormatter = new Intl.DateTimeFormat("az-AZ", {
-  day: "2-digit",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
+const AZ_MONTHS = ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avq", "sen", "okt", "noy", "dek"];
+
+function formatNotificationTime(value: string) {
+  const date = new Date(value);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Baku",
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value || "";
+  const month = AZ_MONTHS[Number(part("month")) - 1] || part("month");
+  return `${Number(part("day"))} ${month} ${part("year")} · ${part("hour")}:${part("minute")}`;
+}
 
 export function NotificationCenter() {
   const [items, setItems] = useState<NotificationItem[]>([]);
+  const [examinations, setExaminations] = useState<Record<string, ExaminationDetails>>({});
   const [studentId, setStudentId] = useState<string>();
   const [open, setOpen] = useState(false);
   const [pushState, setPushState] = useState<"unknown" | "enabled" | "disabled" | "unsupported">("unknown");
   const [enabling, setEnabling] = useState(false);
-  const [testing, setTesting] = useState(false);
   const [pushMessage, setPushMessage] = useState<string>();
   const [needsIosInstall, setNeedsIosInstall] = useState(false);
   const container = useRef<HTMLDivElement>(null);
@@ -54,6 +74,27 @@ export function NotificationCenter() {
     if (!supabase) return;
     let channel: ReturnType<typeof supabase.channel> | undefined;
 
+    const loadExaminations = async (notificationItems: NotificationItem[]) => {
+      const examinationIds = [...new Set(notificationItems
+        .filter((item) => item.type === "exam_created")
+        .map((item) => examinationIdFromEventKey(item.event_key))
+        .filter((id): id is string => Boolean(id)))];
+      if (!examinationIds.length) return;
+
+      const { data: examRows, error: examError } = await supabase
+        .from("examinations")
+        .select("id,title,exam_date,total_questions,description")
+        .in("id", examinationIds);
+      if (examError) {
+        console.error("Examination notification details could not be loaded:", examError);
+        return;
+      }
+      setExaminations((current) => ({
+        ...current,
+        ...Object.fromEntries((examRows || []).map((exam) => [exam.id, exam as ExaminationDetails])),
+      }));
+    };
+
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -61,12 +102,16 @@ export function NotificationCenter() {
       if (!student) return;
       setStudentId(student.id);
 
-      const { data } = await supabase.from("notifications").select("id,type,title,body,link,read_at,created_at").order("created_at", { ascending: false }).limit(30);
-      setItems((data || []) as NotificationItem[]);
+      const { data } = await supabase.from("notifications").select("id,type,title,body,link,event_key,read_at,created_at").order("created_at", { ascending: false }).limit(30);
+      const notificationItems = (data || []) as NotificationItem[];
+      setItems(notificationItems);
+      await loadExaminations(notificationItems);
 
       channel = supabase.channel(`student-notifications-${student.id}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `student_id=eq.${student.id}` }, (payload) => {
-          setItems((current) => [payload.new as NotificationItem, ...current.filter((item) => item.id !== payload.new.id)].slice(0, 30));
+          const notification = payload.new as NotificationItem;
+          setItems((current) => [notification, ...current.filter((item) => item.id !== notification.id)].slice(0, 30));
+          void loadExaminations([notification]);
         })
         .subscribe();
 
@@ -102,7 +147,7 @@ export function NotificationCenter() {
         }, { onConflict: "endpoint" });
         if (syncError) throw syncError;
         setPushState("enabled");
-        setPushMessage("Cihaz serverlə sinxronlaşdırıldı.");
+        setPushMessage(undefined);
       } else {
         setPushState("disabled");
       }
@@ -157,27 +202,13 @@ export function NotificationCenter() {
       }, { onConflict: "endpoint" });
       if (error) throw error;
       setPushState("enabled");
-      setPushMessage("Cihaz bildirişləri aktivdir.");
+      setPushMessage(undefined);
     } catch (error) {
       console.error("Push activation failed:", error);
       setPushState("disabled");
       setPushMessage("Aktivləşdirmə alınmadı. Brauzer icazəsini yoxlayıb yenidən cəhd edin.");
     } finally {
       setEnabling(false);
-    }
-  };
-
-  const testPush = async () => {
-    setTesting(true);
-    setPushMessage(undefined);
-    try {
-      const result = await sendTestNotification();
-      setPushMessage(result.message || result.error || "Test tamamlanmadı.");
-    } catch (error) {
-      console.error("Push test failed:", error);
-      setPushMessage("Test zamanı bağlantı xətası yarandı.");
-    } finally {
-      setTesting(false);
     }
   };
 
@@ -213,17 +244,47 @@ export function NotificationCenter() {
         </button>
       </div>}
       {!needsIosInstall && pushState === "unsupported" && <p className="border-b bg-amber-50 px-4 py-3 text-[11px] leading-4 text-amber-800">Bu brauzer cihaz bildirişlərini dəstəkləmir. Safari, Chrome və ya Edge-in yeni versiyasını yoxlayın.</p>}
-      {pushState === "enabled" && <div className="flex items-center justify-between gap-3 border-b bg-emerald-50/60 px-4 py-3">
-        <div><strong className="block text-xs text-emerald-900">Cihaz bildirişləri aktivdir</strong><span className="text-[11px] text-emerald-700">İndi real göndərişi yoxlaya bilərsiniz.</span></div>
-        <button type="button" disabled={testing} onClick={() => void testPush()} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-emerald-800 disabled:opacity-60">
-          {testing ? <LoaderCircle className="size-3.5 animate-spin"/> : <Send className="size-3.5"/>}Test et
-        </button>
-      </div>}
-      {pushMessage && <p className="border-b bg-slate-50 px-4 py-2 text-[11px] leading-4 text-slate-600">{pushMessage}</p>}
+      {pushMessage && pushState !== "enabled" && <p className="border-b bg-slate-50 px-4 py-2 text-[11px] leading-4 text-slate-600">{pushMessage}</p>}
       <div className="max-h-[25rem] overflow-y-auto">
-        {items.length ? items.map((item) => <Link key={item.id} href={item.link} onClick={() => { setOpen(false); void markRead([item.id]); }} className={`block border-b px-4 py-3 transition last:border-0 hover:bg-slate-50 ${item.read_at ? "bg-white" : "bg-indigo-50/40"}`}>
-          <div className="flex gap-3"><span className={`mt-1 size-2 shrink-0 rounded-full ${item.read_at ? "bg-slate-200" : "bg-indigo-500"}`}/><span className="min-w-0"><strong className="block text-sm text-slate-900">{item.title}</strong><span className="mt-1 block text-xs leading-5 text-slate-600">{item.body}</span><time className="mt-1.5 block text-[10px] font-medium text-slate-400">{timeFormatter.format(new Date(item.created_at))}</time></span></div>
-        </Link>) : <div className="px-5 py-10 text-center"><Bell className="mx-auto size-7 text-slate-300"/><p className="mt-2 text-sm font-semibold text-slate-600">Hələ bildiriş yoxdur</p><p className="mt-1 text-xs text-slate-400">Yeni dərs və nəticələr burada görünəcək.</p></div>}
+        {items.length ? items.map((item) => {
+          const parsedExamDetails = item.type === "exam_created"
+            ? parseExamNotificationBody(item.body)
+            : null;
+          const examinationId = examinationIdFromEventKey(item.event_key);
+          const examination = examinationId ? examinations[examinationId] : undefined;
+          const examDetails = examination ? {
+            date: formatAzDate(examination.exam_date),
+            description: examination.description?.trim() || "Açıqlama əlavə edilməyib.",
+            examTitle: examination.title,
+            questionCount: examination.total_questions,
+          } : parsedExamDetails;
+
+          return <Link key={item.id} href={item.link} onClick={() => { setOpen(false); void markRead([item.id]); }} className={`group block border-b px-3 py-3 transition last:border-0 hover:bg-slate-50 ${item.read_at ? "bg-white" : "bg-indigo-50/45"}`}>
+            <div className="flex gap-3 rounded-xl px-1 py-0.5">
+              <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${examDetails ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-500"}`}>
+                {examDetails ? <CalendarDays className="size-4.5"/> : <Bell className="size-4"/>}
+              </span>
+              <span className="min-w-0 flex-1 pt-0.5">
+                {examDetails ? <>
+                  <span className="flex items-center gap-2"><span className="text-[9px] font-extrabold uppercase tracking-[.16em] text-indigo-600">Yeni sınaq</span>{!item.read_at && <span className="size-1.5 rounded-full bg-indigo-500"/>}</span>
+                  <strong className="mt-0.5 block truncate text-sm text-slate-950">{examDetails.examTitle || item.title}</strong>
+                  <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700"><CalendarDays className="size-3"/>{examDetails.date}</span>
+                    {examDetails.questionCount !== null && <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">{examDetails.questionCount} sual</span>}
+                  </span>
+                  {examDetails.description && <span className="mt-2 block border-l-2 border-indigo-200 pl-2.5 text-xs leading-5 text-slate-600">{examDetails.description}</span>}
+                </> : <>
+                  <span className="flex items-center gap-2"><strong className="block text-sm text-slate-900">{item.title}</strong>{!item.read_at && <span className="size-1.5 rounded-full bg-indigo-500"/>}</span>
+                  <span className="mt-1 block whitespace-pre-line text-xs leading-5 text-slate-600">{item.body}</span>
+                </>}
+                <span className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+                  <time className="flex items-center gap-1 text-[10px] font-medium text-slate-400"><Clock3 className="size-3"/>{formatNotificationTime(item.created_at)}</time>
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-indigo-500 opacity-0 transition group-hover:opacity-100">Ətraflı<ChevronRight className="size-3"/></span>
+                </span>
+              </span>
+            </div>
+          </Link>;
+        }) : <div className="px-5 py-10 text-center"><Bell className="mx-auto size-7 text-slate-300"/><p className="mt-2 text-sm font-semibold text-slate-600">Hələ bildiriş yoxdur</p><p className="mt-1 text-xs text-slate-400">Yeni dərs və nəticələr burada görünəcək.</p></div>}
       </div>
     </div>}
   </div>;
