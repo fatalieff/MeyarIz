@@ -25,7 +25,6 @@ export default async function RankingsPage() {
       <AppHeader title="Ümumi reytinq" />
       <main className="p-5 md:p-8">
         <PageHeader
-          eyebrow="Variant B"
           title="Şagird reytinqi"
           description={`Reytinq ${periodLabel.toLocaleLowerCase("az-AZ")} ərzində qeydə alınmış normallaşdırılmış nəticələrin ortasına əsaslanır. Fərqli çətinlikli sınaqlar akademik baxımdan tam bərabər müqayisə sayılmır.`}
         />

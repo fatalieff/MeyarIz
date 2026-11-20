@@ -8,28 +8,35 @@ export async function AdminHeader({ title }: { title: string }) {
   const userName = profile?.full_name ?? "İnzibatçı";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 px-5 backdrop-blur-md md:px-8">
-      <div className="mx-auto max-w-[1536px]">
-        <div className="flex h-20 items-center gap-4">
+    <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 px-4 backdrop-blur-xl sm:px-6 md:px-8 transition-colors">
+      <div className="mx-auto max-w-[1600px]">
+        <div className="flex h-16 md:h-[4.25rem] items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                <ShieldCheck className="size-3 text-indigo-400" />
-                İnzibatçı Paneli
+              <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-purple-700">
+                <ShieldCheck className="size-3 text-purple-600" />
+                İnzibatçı
               </span>
+              <span className="hidden text-slate-300 sm:inline">/</span>
+              <h1 className="truncate text-base md:text-lg font-bold tracking-tight text-slate-900">
+                {title}
+              </h1>
             </div>
-            <h1 className="mt-1 truncate text-lg font-bold tracking-tight text-slate-950">{title}</h1>
           </div>
 
-          <Link
-            href="/admin/teachers/new"
-            className="hidden items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:bg-indigo-800 sm:flex"
-          >
-            <UserPlus className="size-4" />
-            Yeni müəllim əlavə et
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/teachers/new"
+              className="hidden items-center gap-2 rounded-xl bg-purple-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-purple-700 active:bg-purple-800 sm:flex"
+            >
+              <UserPlus className="size-3.5" />
+              <span>Yeni müəllim əlavə et</span>
+            </Link>
 
-          <AdminUserMenu userName={userName} />
+            <div className="h-6 w-px bg-slate-200/80 mx-0.5" />
+
+            <AdminUserMenu userName={userName} />
+          </div>
         </div>
       </div>
     </header>

@@ -38,7 +38,7 @@ export function NavigationLayoutMenu() {
   const CurrentIcon = choices.find((c) => c.value === layout)?.icon || PanelLeft;
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative hidden lg:block">
       <button
         type="button"
         title="Menyu görünüşü"

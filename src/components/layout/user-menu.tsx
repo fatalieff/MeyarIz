@@ -62,37 +62,37 @@ export function UserMenu({ userName, role }: UserMenuProps) {
         aria-label="Hesab menyusunu aç"
         onClick={() => setIsOpen((open) => !open)}
         className={cn(
-          "group flex items-center gap-2 rounded-xl border bg-white p-1.5 shadow-xs transition-colors hover:border-slate-300 sm:gap-3 sm:pr-3",
-          isOpen ? "border-indigo-500 ring-2 ring-indigo-500/10" : "border-slate-200",
+          "group flex items-center gap-2 rounded-xl border bg-white p-1 shadow-xs transition-all duration-150 hover:border-slate-300 sm:gap-2.5 sm:pr-3",
+          isOpen ? "border-indigo-500 ring-2 ring-indigo-500/15" : "border-slate-200/90",
         )}
       >
-        <span className="grid size-9 place-items-center rounded-lg bg-indigo-600 font-bold text-white shadow-xs">
+        <span className="grid size-8 sm:size-8.5 place-items-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 font-bold text-white shadow-xs text-xs sm:text-sm">
           {initial}
         </span>
-        <span className="hidden min-w-0 text-left text-sm sm:block">
-          <strong className="block max-w-40 truncate text-slate-800">{userName}</strong>
-          <span className="text-[11px] text-slate-500">{role === "teacher" ? "Müəllim hesabı" : "Şagird hesabı"}</span>
+        <span className="hidden min-w-0 text-left sm:block">
+          <strong className="block max-w-36 truncate text-xs font-semibold text-slate-900">{userName}</strong>
+          <span className="block text-[10.5px] font-medium text-slate-500">{role === "teacher" ? "Müəllim hesabı" : "Şagird hesabı"}</span>
         </span>
-        <ChevronDown className={cn("hidden size-4 text-slate-400 transition-transform sm:block", isOpen && "rotate-180 text-indigo-600")} />
+        <ChevronDown className={cn("hidden size-3.5 text-slate-400 transition-transform duration-200 sm:block", isOpen && "rotate-180 text-indigo-600")} />
       </button>
 
       {isOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+          className="absolute right-0 top-full z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-[0_16px_36px_-6px_rgba(15,23,42,0.12)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="mb-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 sm:hidden">
-            <strong className="block truncate text-sm text-slate-900">{userName}</strong>
-            <span className="text-xs text-slate-500">{role === "teacher" ? "Müəllim hesabı" : "Şagird hesabı"}</span>
+          <div className="mb-1 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 sm:hidden">
+            <strong className="block truncate text-xs font-bold text-slate-900">{userName}</strong>
+            <span className="text-[11px] text-slate-500">{role === "teacher" ? "Müəllim hesabı" : "Şagird hesabı"}</span>
           </div>
           <Link
             href={profileHref}
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
           >
-            <ProfileIcon className="size-[18px] text-indigo-500" />
-            {profileLabel}
+            <ProfileIcon className="size-4 text-indigo-500" />
+            <span>{profileLabel}</span>
           </Link>
           <div className="my-1 h-px bg-slate-100" />
           <form action={logout}>
