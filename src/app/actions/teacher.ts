@@ -147,6 +147,8 @@ export async function createGroup(
         description: input.description || null,
         preparation_level: input.preparationLevel || null,
         color: input.color,
+        price_cents: Math.round(input.priceManat * 100),
+        package_lesson_count: input.packageLessonCount,
       });
     if (error)
       throw new Error(
@@ -176,6 +178,8 @@ export async function updateGroup(
         description: input.description || null,
         preparation_level: input.preparationLevel || null,
         color: input.color,
+        price_cents: Math.round(input.priceManat * 100),
+        package_lesson_count: input.packageLessonCount,
       })
       .eq("id", id)
       .eq("workspace_id", workspaceId)
@@ -334,9 +338,30 @@ export async function createStudent(
       );
     const { error: memberError } = await supabase
       .from("group_memberships")
-      .insert({ student_id: student.id, group_id: input.groupId });
+      .insert({ student_id: student.id, group_id: input.groupId, joined_at: input.joinedAt });
     if (memberError)
       throw new Error("Şagird yaradıldı, lakin qrupa qoşulmadı.");
+    const { data: invoiceId, error: billingError } = await supabase.rpc(
+      "initialize_student_billing",
+      { p_student: student.id, p_group: input.groupId, p_joined_on: input.joinedAt },
+    );
+    if (billingError || !invoiceId)
+      throw new Error("Şagird yaradıldı, lakin ilk ödəniş hesabı yaradıla bilmədi.");
+    if (input.paymentNow) {
+      const { data: invoice } = await supabase
+        .from("invoices").select("amount_cents").eq("id", invoiceId).single();
+      if (!invoice || invoice.amount_cents <= 0)
+        throw new Error("İlk hesabın məbləği müəyyən edilə bilmədi.");
+      const { error: paymentError } = await supabase.rpc("record_payment", {
+        p_student: student.id,
+        p_amount_cents: invoice.amount_cents,
+        p_received_at: input.joinedAt,
+        p_method: input.paymentMethod,
+        p_invoice: invoiceId,
+        p_note: "Şagird əlavə edilərkən alınan ilk ödəniş",
+      });
+      if (paymentError) throw new Error("İlk ödəniş qeydə alına bilmədi.");
+    }
     const warnings: string[] = [];
     const contacts = parentContacts(student.id, input).filter(
       (contact) => contact.full_name || contact.phone,

@@ -14,6 +14,7 @@ import { PerformanceChart } from "@/components/charts/performance-chart";
 import { StudentEditForm } from "@/components/forms/entity-forms";
 import { DeleteStudentButton } from "@/components/students/delete-student-button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StudentPaymentHistory } from "@/components/payments/student-payment-history";
 import { FormPanel } from "@/components/ui/form-panel";
 import { getGroups, getStudent } from "@/lib/queries/teacher";
 import { azDate, azMonthShort, azPercent, normalizeAzPhone } from "@/lib/utils";
@@ -277,6 +278,8 @@ export default async function StudentDetail({
             />
           )}
         </section>
+
+        <StudentPaymentHistory student={student} />
 
         {student.private_notes && (
           <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">

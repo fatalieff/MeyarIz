@@ -1,0 +1,18 @@
+import Link from "next/link";
+import { azn, invoiceStatusLabel, type InvoiceStatus } from "@/lib/payments";
+import { AdjustmentForm, BillingTermsForm, VoidPaymentForm } from "@/components/payments/payment-forms";
+
+export function StudentPaymentHistory({ student }: { student: any }) {
+  const invoices = student.invoices || [];
+  const payments = student.payments || [];
+  const debt = invoices.filter((i:any) => !["PAID","VOID"].includes(i.status)).reduce((s:number,i:any)=>s+Number(i.amount_cents)-Number(i.paid_cents),0);
+  const allocated = payments.reduce((s:number,p:any)=>s+(p.payment_allocations||[]).reduce((a:number,x:any)=>a+Number(x.amount_cents),0),0);
+  const advance = payments.filter((p:any)=>!p.voided_at).reduce((s:number,p:any)=>s+Number(p.amount_cents),0)-allocated;
+  return <section className="card mt-6 overflow-hidden">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b p-5 sm:p-6"><div><h3 className="font-bold">Ödəniş tarixçəsi</h3><p className="mt-1 text-xs text-slate-500">Hesablar, real daxilolmalar, avans və fasilələr</p></div><div className="flex gap-3"><div className="rounded-xl bg-rose-50 px-4 py-2 text-right"><span className="block text-[10px] font-bold uppercase text-rose-500">Aktiv borc</span><strong className="text-rose-700">{azn(debt)}</strong></div><div className="rounded-xl bg-sky-50 px-4 py-2 text-right"><span className="block text-[10px] font-bold uppercase text-sky-500">Avans</span><strong className="text-sky-700">{azn(advance)}</strong></div></div></div>
+    {invoices.length ? <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-4">Dövr</th><th>Məbləğ</th><th>Endirim</th><th>Ödənib</th><th>Qalıq</th><th>Status</th></tr></thead><tbody className="divide-y">{invoices.map((i:any)=><tr key={i.id}><td className="p-4 font-semibold">{i.period_key}<span className="block text-xs font-normal text-slate-400">{i.period_start} — {i.period_end}</span></td><td>{azn(i.amount_cents)}</td><td>{azn(i.discount_cents)}</td><td>{azn(i.paid_cents)}</td><td className="font-semibold">{azn(Number(i.amount_cents)-Number(i.paid_cents))}</td><td>{invoiceStatusLabel[i.status as InvoiceStatus]}</td></tr>)}</tbody></table></div> : <p className="p-6 text-sm text-slate-500">Hələ ödəniş hesabı yoxdur.</p>}
+    <div className="border-t p-5 sm:p-6"><h4 className="text-sm font-bold">Faktiki alınmış ödənişlər</h4>{payments.length ? <div className="mt-3 grid gap-2 sm:grid-cols-2">{payments.map((p:any)=><div key={p.id} className="rounded-xl border p-3 text-sm"><strong>{azn(p.amount_cents)}</strong><span className="ml-2 text-xs text-slate-500">{p.received_at} · {p.method === "CASH" ? "Nağd" : p.method === "BANK_TRANSFER" ? "Bank köçürməsi" : "Digər"}</span>{p.note && <p className="mt-1 text-xs text-slate-500">{p.note}</p>}</div>)}</div> : <p className="mt-2 text-sm text-slate-500">Real daxilolma qeydə alınmayıb.</p>}<Link href={`/dashboard/payments?add=1&student=${student.id}`} className="mt-4 inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white">Ödəniş əlavə et</Link></div>
+    <details className="border-t p-5 sm:p-6"><summary className="cursor-pointer text-sm font-bold">Fərdi qiymət və endirim</summary><div className="mt-4"><BillingTermsForm studentId={student.id} /></div></details>
+    <details className="border-t p-5 sm:p-6"><summary className="cursor-pointer text-sm font-bold">Maliyyə düzəlişləri</summary><div className="mt-4 grid gap-6 lg:grid-cols-2"><AdjustmentForm studentId={student.id} invoices={invoices} /><VoidPaymentForm studentId={student.id} payments={payments} /></div></details>
+  </section>;
+}

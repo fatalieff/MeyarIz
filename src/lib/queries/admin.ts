@@ -26,6 +26,7 @@ export interface AdminTeacherSummary {
 
 export interface AdminTeacherDetails extends AdminTeacherSummary {
   lastSignInAt?: string | null;
+  billingModel?: "CALENDAR_MONTH" | "ANNIVERSARY_MONTH" | "LESSON_PACKAGE" | null;
   auditLogs: AdminAuditLog[];
 }
 
@@ -240,6 +241,13 @@ export async function getAdminTeacherDetails(id: string): Promise<AdminTeacherDe
     };
   }
 
+  const { data: billing } = base.workspaceId ? await ctx.supabase
+    .from("workspace_billing_settings")
+    .select("billing_model")
+    .eq("workspace_id", base.workspaceId)
+    .is("effective_to", null)
+    .maybeSingle() : { data: null };
+
   // 2. Bu müəllim üzrə audit logları gətir
   const { data: logs } = await ctx.supabase
     .from("admin_audit_logs")
@@ -259,7 +267,7 @@ export async function getAdminTeacherDetails(id: string): Promise<AdminTeacherDe
     createdAt: l.created_at,
   }));
 
-  return { ...base, auditLogs };
+  return { ...base, billingModel: billing?.billing_model || null, auditLogs };
 }
 
 export async function getAdminAuditLogs(limit = 100): Promise<AdminAuditLog[]> {

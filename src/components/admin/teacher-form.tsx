@@ -76,6 +76,18 @@ export function CreateTeacherForm() {
         </p>
       </div>
 
+      <div>
+        <label htmlFor="billingModel" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+          Ödəniş modeli <span className="text-rose-500">*</span>
+        </label>
+        <select id="billingModel" name="billingModel" required defaultValue="CALENDAR_MONTH" className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-600 focus:outline-none">
+          <option value="CALENDAR_MONTH">Təqvim ayı üzrə</option>
+          <option value="ANNIVERSARY_MONTH">Qoşulma gününə görə aylıq</option>
+          <option value="LESSON_PACKAGE">Dərs paketi üzrə</option>
+        </select>
+        <p className="mt-1 text-xs text-slate-500">Model workspace yaradılarkən serverdə saxlanılır.</p>
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
         <div className="flex items-center gap-2 text-slate-800">
           <KeyRound className="size-4 text-indigo-600" />

@@ -21,6 +21,7 @@ import {
   Settings,
   Sigma,
   Users,
+  WalletCards,
 } from "lucide-react";
 
 interface NavSection {
@@ -42,6 +43,12 @@ const teacherSections: NavSection[] = [
     items: [
       ["/dashboard/schedule", "Dərs cədvəli", CalendarDays],
       ["/dashboard/exams", "Sınaqlar", ClipboardCheck],
+    ],
+  },
+  {
+    title: "Maliyyə",
+    items: [
+      ["/dashboard/payments", "Ödənişlər", WalletCards],
     ],
   },
   {

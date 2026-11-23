@@ -123,6 +123,10 @@ export function GroupForm() {
         Hazırlıq səviyyəsi
         <input className={field} name="preparationLevel" placeholder="Məsələn, orta" />
       </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className={label}>Standart qiymət (AZN)<input className={field} name="priceManat" type="number" min="0" step="0.01" required defaultValue="80" /></label>
+        <label className={label}>Paketdə dərs sayı<input className={field} name="packageLessonCount" type="number" min="1" max="100" required defaultValue="8" /></label>
+      </div>
       <label className={label}>
         Təsvir
         <textarea
@@ -156,6 +160,8 @@ export function GroupEditForm({ group }: { group: any }) {
         Hazırlıq səviyyəsi
         <input className={field} name="preparationLevel" defaultValue={group.preparation_level || ""} placeholder="Məsələn, orta" />
       </label>
+      <label className={label}>Standart qiymət (AZN)<input className={field} name="priceManat" type="number" min="0" step="0.01" required defaultValue={(Number(group.price_cents || 0) / 100).toFixed(2)} /></label>
+      <label className={label}>Paketdə dərs sayı<input className={field} name="packageLessonCount" type="number" min="1" max="100" required defaultValue={group.package_lesson_count || 8} /></label>
       <label className={`${label} sm:col-span-2`}>
         Təsvir
         <textarea
@@ -181,7 +187,7 @@ export function GroupEditForm({ group }: { group: any }) {
 
 export function StudentForm({ groups }: { groups: any[] }) {
   const [state, action, pending] = useActionState(createStudent, null);
-  return <form action={action} className="grid gap-4 sm:grid-cols-2"><label className={label}>Ad və soyad<input className={field} name="fullName" required placeholder="Əli Məmmədov" /></label><div className={label}><span>Qrup</span><CustomSelect name="groupId" options={groupOptions(groups)} placeholder="Qrup seçin" ariaLabel="Şagird qrupu" /></div><label className={label}>E-poçt<input className={field} name="email" type="email" required autoComplete="email" placeholder="ali@example.com" /><span className="mt-1 block text-xs font-normal text-slate-500">Şagirdin kabinetə giriş e-poçtu.</span></label><label className={label}>Şifrə<input className={field} name="password" type="password" required minLength={6} placeholder="Ən azı 6 simvol" /><span className="mt-1 block text-xs font-normal text-slate-500">Şagirdin kabinetə daxil olacağı ilkin şifrə.</span></label><label className={label}>Şagirdin telefonu<input className={field} name="phone" type="tel" inputMode="tel" placeholder="+994 50 123 45 67" /></label><label className={label}>Hazırlıq səviyyəsi<input className={field} name="preparationLevel" /></label><div className="space-y-3 sm:col-span-2"><div><h3 className="text-sm font-bold text-slate-800">Valideyn əlaqələri</h3><p className="mt-1 text-xs text-slate-500">Ana və ata məlumatlarından istədiyinizi doldura bilərsiniz.</p></div><div className="grid gap-3 lg:grid-cols-2"><ParentContactFields type="mother" title="Ana" /><ParentContactFields type="father" title="Ata" /></div></div><label className={`${label} sm:col-span-2`}>Müəllim qeydi<input className={field} name="privateNotes" placeholder="Yalnız siz görəcəksiniz" /></label><div className="sm:col-span-2"><Message state={state} /></div><Button disabled={pending} className="sm:col-span-2">{pending ? "Hesab yaradılır..." : "Şagird əlavə et"}</Button></form>;
+  return <form action={action} className="grid gap-4 sm:grid-cols-2"><label className={label}>Ad və soyad<input className={field} name="fullName" required placeholder="Əli Məmmədov" /></label><div className={label}><span>Qrup</span><CustomSelect name="groupId" options={groupOptions(groups)} placeholder="Qrup seçin" ariaLabel="Şagird qrupu" /></div><label className={label}>E-poçt<input className={field} name="email" type="email" required autoComplete="email" placeholder="ali@example.com" /></label><label className={label}>Şifrə<input className={field} name="password" type="password" required minLength={6} /></label><label className={label}>Qoşulma tarixi<input className={field} name="joinedAt" type="date" required defaultValue={new Date().toISOString().slice(0,10)} /></label><label className={label}>Şagirdin telefonu<input className={field} name="phone" type="tel" /></label><label className={label}>Hazırlıq səviyyəsi<input className={field} name="preparationLevel" /></label><label className="flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-sm font-semibold text-indigo-900"><input type="checkbox" name="paymentNow" className="size-4 accent-indigo-600" />İlk ödəniş indi alındı</label><label className={label}>Ödəniş üsulu<select className={field} name="paymentMethod" defaultValue="CASH"><option value="CASH">Nağd</option><option value="BANK_TRANSFER">Bank köçürməsi</option><option value="OTHER">Digər</option></select></label><div className="space-y-3 sm:col-span-2"><div><h3 className="text-sm font-bold text-slate-800">Valideyn əlaqələri</h3></div><div className="grid gap-3 lg:grid-cols-2"><ParentContactFields type="mother" title="Ana" /><ParentContactFields type="father" title="Ata" /></div></div><label className={`${label} sm:col-span-2`}>Müəllim qeydi<input className={field} name="privateNotes" /></label><div className="sm:col-span-2"><Message state={state} /></div><Button disabled={pending} className="sm:col-span-2">{pending ? "Hesab yaradılır..." : "Şagird əlavə et"}</Button></form>;
 }
 
 export function StudentEditForm({ student, groups, currentGroupId }: { student: any; groups: any[]; currentGroupId?: string }) {

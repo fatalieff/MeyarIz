@@ -46,6 +46,7 @@ export async function createTeacher(_: unknown, formData: FormData): Promise<Act
         workspaceName: parsed.workspaceName,
         password: parsed.password,
         status: parsed.status,
+        billingModel: parsed.billingModel,
       },
     });
 
@@ -54,6 +55,12 @@ export async function createTeacher(_: unknown, formData: FormData): Promise<Act
     }
     if (!data?.ok) {
       throw new Error(data?.error || "Müəllim hesabı yaradıla bilmədi.");
+    }
+    const { data: billingData, error: billingError } = await supabase.functions.invoke("configure-teacher-billing", {
+      body: { teacherId: data.teacherId, billingModel: parsed.billingModel },
+    });
+    if (billingError || !billingData?.ok) {
+      throw new Error("Müəllim yaradıldı, lakin workspace ödəniş modeli konfiqurasiya edilə bilmədi.");
     }
 
     revalidatePath("/admin");

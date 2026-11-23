@@ -14,6 +14,8 @@ export const groupSchema = z.object({
     .string()
     .regex(/^#[0-9a-f]{6}$/i)
     .default("#4f5fe7"),
+  priceManat: z.coerce.number().min(0, "Qiymət mənfi ola bilməz.").max(100000).default(0),
+  packageLessonCount: z.coerce.number().int().min(1).max(100).default(8),
 });
 export const groupIdSchema = z
   .string()
@@ -26,6 +28,9 @@ export const studentSchema = z.object({
   phone: optionalText,
   preparationLevel: optionalText,
   privateNotes: optionalText,
+  joinedAt: z.string().date("Qoşulma tarixini seçin."),
+  paymentNow: z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean()).default(false),
+  paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "OTHER"]).default("CASH"),
   ...parentContactFields,
 });
 export const studentIdSchema = z
@@ -177,6 +182,7 @@ export const createTeacherSchema = z
       .max(72, "Şifrə 72 simvoldan çox ola bilməz."),
     confirmPassword: z.string().min(1, "Şifrə təkrarını daxil edin."),
     status: z.enum(["active", "suspended"]).default("active"),
+    billingModel: z.enum(["CALENDAR_MONTH", "ANNIVERSARY_MONTH", "LESSON_PACKAGE"]).default("CALENDAR_MONTH"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Şifrə və şifrə təkrarı eyni olmalıdır.",

@@ -124,6 +124,7 @@ export default async function TeacherDetailPage({
               </span>
               <p className="mt-2 text-base font-bold text-slate-900">{teacher.workspaceName}</p>
               <p className="mt-1 text-[11px] text-slate-400">Təcrid olunmuş workspace</p>
+              <p className="mt-2 text-xs font-semibold text-indigo-700">Ödəniş: {teacher.billingModel === "CALENDAR_MONTH" ? "Təqvim ayı" : teacher.billingModel === "ANNIVERSARY_MONTH" ? "Fərdi aylıq dövr" : teacher.billingModel === "LESSON_PACKAGE" ? "Dərs paketi" : "Təyin edilməyib"}</p>
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">

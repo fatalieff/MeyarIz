@@ -25,7 +25,7 @@ export async function getGroups() {
   const { data } = await ctx.supabase
     .from("groups")
     .select(
-      "id,name,description,preparation_level,color,status,group_schedules(id,weekday,start_time,end_time,is_extra,session_date),group_memberships(count)",
+      "id,name,description,preparation_level,color,status,price_cents,package_lesson_count,group_schedules(id,weekday,start_time,end_time,is_extra,session_date),group_memberships(count)",
     )
     .eq("workspace_id", ctx.ws.id)
     .order("created_at", { ascending: false });
@@ -232,7 +232,7 @@ export async function getStudent(id: string) {
   const { data, error } = await ctx.supabase
     .from("students")
     .select(
-      "*,parent_contacts(*),group_memberships(*,groups(id,name,color,group_schedules(*))),exam_results(correct_answers,normalized_score,examinations(id,title,exam_date,total_questions))",
+      "*,parent_contacts(*),group_memberships(*,groups(id,name,color,group_schedules(*))),exam_results(correct_answers,normalized_score,examinations(id,title,exam_date,total_questions)),invoices(*,payment_allocations(amount_cents,payment_id)),payments(*,payment_allocations(amount_cents,invoice_id)),student_pauses(*)",
     )
     .eq("id", id)
     .eq("workspace_id", ctx.ws.id)
