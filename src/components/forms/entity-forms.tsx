@@ -59,16 +59,15 @@ function GroupColorField({ defaultValue = "#4f46e5" }: { defaultValue?: string }
           className={cn(
             "grid size-11 place-items-center rounded-xl transition-colors shrink-0",
             isLight
-              ? "border border-slate-300 ring-1 ring-slate-900/10 text-slate-900 shadow-2xs"
+              ? "border border-slate-300 ring-1 ring-slate-900/10 text-slate-900 shadow-2xs bg-white"
               : "text-white shadow-sm"
           )}
           style={{
             backgroundColor: color,
-            color: isLight ? "#0f172a" : "#ffffff",
           }}
           title="Qrup ikonunun görünüşü"
         >
-          <Users className="size-5" />
+          <Users className={cn("size-5", isLight ? "text-slate-900" : "text-white")} />
         </div>
 
         {/* Xüsusi rəng seçici */}

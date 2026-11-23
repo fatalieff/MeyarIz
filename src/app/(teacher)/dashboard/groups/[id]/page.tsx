@@ -68,15 +68,19 @@ export default async function GroupDetail({
               className={cn(
                 "grid size-14 shrink-0 place-items-center rounded-2xl shadow-sm transition-transform",
                 isLightColor(group.color)
-                  ? "border border-slate-300/80 ring-1 ring-slate-900/5 text-slate-900"
+                  ? "border border-slate-300/80 ring-1 ring-slate-900/5 bg-white text-slate-900"
                   : "text-white shadow-md"
               )}
               style={{
                 backgroundColor: group.color || "#4f46e5",
-                color: isLightColor(group.color) ? "#0f172a" : "#ffffff",
               }}
             >
-              <Users className="size-6" />
+              <Users
+                className={cn(
+                  "size-6",
+                  isLightColor(group.color) ? "text-slate-900" : "text-white"
+                )}
+              />
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">

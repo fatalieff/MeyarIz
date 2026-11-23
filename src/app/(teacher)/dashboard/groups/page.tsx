@@ -264,15 +264,14 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
                         className={cn(
                           "grid size-12 shrink-0 place-items-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-105",
                           isLight
-                            ? "border border-slate-300/80 ring-1 ring-slate-900/5 text-slate-900"
+                            ? "border border-slate-300/80 ring-1 ring-slate-900/5 bg-white text-slate-900"
                             : "text-white shadow-md"
                         )}
                         style={{
                           backgroundColor: groupColor,
-                          color: isLight ? "#0f172a" : "#ffffff",
                         }}
                       >
-                        <Users className="size-5" />
+                        <Users className={cn("size-5", isLight ? "text-slate-900" : "text-white")} />
                       </div>
 
                       {/* Badgelər */}
