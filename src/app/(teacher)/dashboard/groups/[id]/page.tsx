@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FormPanel } from "@/components/ui/form-panel";
 import { DeleteGroupButton } from "@/components/groups/delete-group-button";
+import { GroupStatusButton } from "@/components/groups/group-status-button";
 import { getGroup } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
 import { azDate, azPercent, isLightColor, cn } from "@/lib/utils";
@@ -120,6 +121,11 @@ export default async function GroupDetail({
                 </>
               )}
             </Link>
+            <GroupStatusButton
+              groupId={group.id}
+              groupName={group.name}
+              status={group.status}
+            />
             <DeleteGroupButton groupId={group.id} groupName={group.name} />
           </div>
         </div>

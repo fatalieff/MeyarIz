@@ -15,6 +15,7 @@ import { FormPanel } from "@/components/ui/form-panel";
 import { GroupForm } from "@/components/forms/entity-forms";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { GroupStatusButton } from "@/components/groups/group-status-button";
 import { getGroups } from "@/lib/queries/teacher";
 import { weekDays } from "@/lib/calculations/schedules";
 import { cn, isLightColor } from "@/lib/utils";
@@ -241,9 +242,8 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
               const isLight = isLightColor(groupColor);
 
               return (
-                <Link
+                <article
                   key={g.id}
-                  href={`/dashboard/groups/${g.id}`}
                   className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
                 >
                   {/* Qrupun Fərdi Rəng Zolağı */}
@@ -289,9 +289,12 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
 
                     {/* Qrup Adı və Təsviri */}
                     <div className="mt-4">
-                      <h3 className="text-lg font-bold tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600 line-clamp-1">
+                      <Link
+                        href={`/dashboard/groups/${g.id}`}
+                        className="focus-ring rounded text-lg font-bold tracking-tight text-slate-900 transition-colors group-hover:text-indigo-600 line-clamp-1"
+                      >
                         {g.name}
-                      </h3>
+                      </Link>
                       <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-slate-500">
                         {g.description || "Bu qrup üçün hələ xüsusi təsvir əlavə edilməyib."}
                       </p>
@@ -335,7 +338,7 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
                   </div>
 
                   {/* Alt Zolaq: Şagird Sayı və Ətraflı Keçid */}
-                  <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-semibold">
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs font-semibold">
                     <div className="flex items-center gap-1.5 text-slate-600">
                       <div className="grid size-6 place-items-center rounded-full bg-slate-100 text-slate-600">
                         <Users className="size-3.5" />
@@ -345,12 +348,23 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1 text-indigo-600 group-hover:text-indigo-700">
-                      <span>İdarə et</span>
-                      <ChevronRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+                    <div className="flex items-center gap-2">
+                      <GroupStatusButton
+                        groupId={g.id}
+                        groupName={g.name}
+                        status={g.status}
+                        compact
+                      />
+                      <Link
+                        href={`/dashboard/groups/${g.id}`}
+                        className="focus-ring inline-flex min-h-9 items-center gap-1 rounded-xl px-2 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+                      >
+                        <span>İdarə et</span>
+                        <ChevronRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+                      </Link>
                     </div>
                   </div>
-                </Link>
+                </article>
               );
             })}
           </section>
@@ -366,6 +380,8 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
             description={
               searchQuery
                 ? `"${params.q}" sorğusu üzrə heç bir nəticə mövcud deyil. Axtarış sözünü dəyişin.`
+                : currentStatus === "archived"
+                ? "Arxivlədiyiniz qruplar burada görünəcək və istədiyiniz zaman yenidən aktiv edilə biləcək."
                 : "Yeni tədris qrupu yaradaraq şagirdlərinizi qruplaşdırın və dərs cədvəlinizi qurun."
             }
           />

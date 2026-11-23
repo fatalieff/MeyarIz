@@ -202,12 +202,47 @@ export async function updateGroup(
   }
 }
 export async function updateGroupStatus(
-  id: string,
+  groupId: string,
   status: "active" | "archived",
-) {
-  const { supabase } = await context();
-  await supabase.from("groups").update({ status }).eq("id", id);
-  revalidatePath("/dashboard/groups");
+): Promise<Result> {
+  try {
+    const id = groupIdSchema.parse(groupId);
+    const { supabase, workspaceId } = await context();
+    const { data, error } = await supabase
+      .from("groups")
+      .update({ status })
+      .eq("id", id)
+      .eq("workspace_id", workspaceId)
+      .select("id")
+      .single();
+
+    if (error || !data) {
+      throw new Error(
+        status === "archived"
+          ? "Qrup arxivə köçürülə bilmədi."
+          : "Qrup yenidən aktiv edilə bilmədi.",
+      );
+    }
+
+    revalidatePath("/dashboard/groups");
+    revalidatePath(`/dashboard/groups/${id}`);
+    revalidatePath("/dashboard/students");
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard/exams");
+    revalidatePath("/dashboard/rankings");
+    revalidatePath("/dashboard/analytics");
+    revalidatePath("/dashboard");
+
+    return {
+      ok: true,
+      message:
+        status === "archived"
+          ? "Qrup arxivə köçürüldü."
+          : "Qrup yenidən aktiv edildi.",
+    };
+  } catch (e) {
+    return { error: friendly(e) };
+  }
 }
 export async function deleteGroup(
   _: unknown,
