@@ -3,7 +3,7 @@ import "server-only";
 import * as webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type NotificationType = "schedule_created" | "schedule_updated" | "schedule_cancelled" | "schedule_occurrence_cancelled" | "extra_lesson" | "exam_created" | "exam_result" | "exam_result_updated";
+export type NotificationType = "schedule_created" | "schedule_updated" | "schedule_cancelled" | "schedule_occurrence_cancelled" | "schedule_occurrence_reactivated" | "extra_lesson" | "exam_created" | "exam_result" | "exam_result_updated";
 
 type NotificationInput = {
   workspaceId: string;

@@ -1,10 +1,12 @@
 "use server";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   bakuDateTime,
+  findOccurrenceConflicts,
+  isScheduleOccurrencePast,
   nextScheduleOccurrenceDate,
   weekDays,
   weekdayFromDate,
@@ -24,7 +26,20 @@ import {
   studentUpdateSchema,
   teacherProfileSchema,
 } from "@/lib/validations/schemas";
-type Result = { ok?: true; error?: string; message?: string; warning?: string };
+type ScheduleConflict = {
+  scheduleId: string;
+  groupName: string;
+  occurrenceDate: string;
+  startTime: string;
+  endTime: string;
+};
+type Result = {
+  ok?: true;
+  error?: string;
+  message?: string;
+  warning?: string;
+  conflicts?: ScheduleConflict[];
+};
 async function context() {
   const supabase = await createClient();
   if (!supabase) throw new Error("Supabase bağlantısı qurulmayıb.");
@@ -766,6 +781,99 @@ export async function cancelNextScheduleOccurrence(id: string): Promise<Result> 
       message: `${formatAzDate(occurrenceDate)} tarixli dərs ləğv edildi. Həftəlik cədvəl saxlanıldı.`,
       warning: notification.error
         ? "Dərs birdəfəlik ləğv edildi, amma bildiriş göndərilə bilmədi."
+        : undefined,
+    };
+  } catch (e) {
+    return { error: friendly(e) };
+  }
+}
+export async function reactivateScheduleOccurrence(
+  cancellationId: string,
+  allowConflict = false,
+): Promise<Result> {
+  try {
+    const validatedCancellationId = z.string().uuid().parse(cancellationId);
+    const { supabase, workspaceId } = await context();
+    const { data: cancellation } = await supabase
+      .from("group_schedule_cancellations")
+      .select("id,schedule_id,occurrence_date")
+      .eq("id", validatedCancellationId)
+      .maybeSingle();
+    if (!cancellation)
+      throw new Error("Bu dərs artıq aktivdir.");
+
+    const { data: schedule } = await supabase
+      .from("group_schedules")
+      .select("id,group_id,weekday,start_time,end_time,location,is_extra,groups!inner(name,workspace_id)")
+      .eq("id", cancellation.schedule_id)
+      .eq("groups.workspace_id", workspaceId)
+      .maybeSingle();
+    if (!schedule) throw new Error("Dərs tapılmadı.");
+    if (schedule.is_extra)
+      throw new Error("Bu əməliyyat yalnız həftəlik dərslər üçün mümkündür.");
+    if (isScheduleOccurrencePast(cancellation.occurrence_date, schedule.end_time))
+      throw new Error("Vaxtı keçmiş dərsi yenidən aktivləşdirmək mümkün deyil.");
+
+    const { data: slots, error: slotsError } = await supabase
+      .from("group_schedules")
+      .select("id,weekday,start_time,end_time,is_extra,session_date,group_schedule_cancellations(occurrence_date),groups!inner(name,workspace_id)")
+      .eq("groups.workspace_id", workspaceId);
+    if (slotsError) throw new Error("Dərs cədvəli yoxlanıla bilmədi.");
+
+    const conflicts = findOccurrenceConflicts(
+      schedule,
+      (slots || []) as any[],
+      cancellation.occurrence_date,
+    );
+    if (conflicts.length && allowConflict !== true) {
+      return {
+        error: "Bu vaxtda başqa dərs mövcuddur.",
+        conflicts: conflicts.map((conflict: any) => {
+          const conflictGroup = Array.isArray(conflict.groups)
+            ? conflict.groups[0]
+            : conflict.groups;
+          return {
+            scheduleId: conflict.id,
+            groupName: conflictGroup?.name || "Digər qrup",
+            occurrenceDate: cancellation.occurrence_date,
+            startTime: conflict.start_time.slice(0, 5),
+            endTime: conflict.end_time.slice(0, 5),
+          };
+        }),
+      };
+    }
+
+    const { data: deleted, error: deleteError } = await supabase
+      .from("group_schedule_cancellations")
+      .delete()
+      .eq("id", cancellation.id)
+      .eq("schedule_id", schedule.id)
+      .select("id")
+      .maybeSingle();
+    if (deleteError) throw new Error("Dərs yenidən aktiv edilə bilmədi.");
+    if (!deleted) throw new Error("Bu dərs artıq aktivdir.");
+
+    const group = Array.isArray(schedule.groups) ? schedule.groups[0] : schedule.groups;
+    const notification = await notifyGroup(supabase, {
+      workspaceId,
+      groupId: schedule.group_id,
+      type: "schedule_occurrence_reactivated",
+      title: "Dərs aktiv olundu",
+      body: `${group?.name || "Qrup"}: ${formatAzDate(cancellation.occurrence_date)} · ${weekDays[schedule.weekday]} · ${schedule.start_time.slice(0, 5)}–${schedule.end_time.slice(0, 5)}. Dərs əvvəlki cədvəl üzrə keçiriləcək.`,
+      link: "/student/schedule",
+      eventKey: `schedule-occurrence-reactivate:${cancellation.id}`,
+    });
+
+    revalidatePath("/dashboard/schedule");
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/groups/${schedule.group_id}`);
+    revalidatePath("/student/schedule");
+    revalidatePath("/student/dashboard");
+    return {
+      ok: true,
+      message: `${formatAzDate(cancellation.occurrence_date)} tarixli dərs yenidən aktiv edildi.`,
+      warning: notification.error
+        ? "Dərs aktiv edildi, amma bildiriş göndərilə bilmədi."
         : undefined,
     };
   } catch (e) {

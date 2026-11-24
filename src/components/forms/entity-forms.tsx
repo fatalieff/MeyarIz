@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { cn, isLightColor } from "@/lib/utils";
+import { ScheduleOccurrenceReactivateButton } from "@/components/schedules/schedule-occurrence-reactivate-button";
+import { isScheduleOccurrencePast, nextScheduleOccurrenceDate } from "@/lib/calculations/schedules";
+import { azDate, cn, isLightColor } from "@/lib/utils";
 
 const field = "focus-ring h-11 w-full rounded-xl border bg-white px-3 text-sm outline-none";
 const label = "space-y-1.5 text-sm font-semibold text-slate-700";
@@ -274,6 +276,12 @@ export function ScheduleEditForm({ schedule }: { schedule: any }) {
   const [confirmation, setConfirmation] = useState<"occurrence" | "permanent" | null>(null);
   const [startHour, startMinute] = schedule.start_time.slice(0, 5).split(":");
   const [endHour, endMinute] = schedule.end_time.slice(0, 5).split(":");
+  const nextOccurrenceDate = schedule.is_extra
+    ? null
+    : nextScheduleOccurrenceDate(schedule.weekday, schedule.end_time);
+  const nextCancellation = schedule.group_schedule_cancellations?.find(
+    (cancellation: any) => cancellation.occurrence_date === nextOccurrenceDate,
+  );
   return <div className="space-y-4">
     <form action={formAction} className="grid gap-4 sm:grid-cols-2">
       <div className="rounded-xl bg-slate-50 p-3 text-sm sm:col-span-2"><strong>{schedule.groups.name}</strong><span className="ml-2 text-slate-500">{schedule.is_extra ? "Əlavə dərs" : "Həftəlik dərs"}</span></div>
@@ -284,7 +292,22 @@ export function ScheduleEditForm({ schedule }: { schedule: any }) {
       <div className="sm:col-span-2"><Message state={state}/></div>
       <Button disabled={pending} className="sm:col-span-2">{pending ? "Yenilənir..." : "Dəyişikliyi yadda saxla və bildir"}</Button>
     </form>
-    {!schedule.is_extra && <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+    {!schedule.is_extra && nextCancellation && nextOccurrenceDate && <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
+      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+        <span><strong className="block text-sm text-rose-950">Növbəti dərs ləğv edilib</strong><span className="mt-1 block text-xs leading-5 text-rose-800">{azDate(nextOccurrenceDate)} tarixli dərs baş tutmayacaq. Səhvən ləğv etmisinizsə yenidən aktiv edə bilərsiniz.</span></span>
+        <ScheduleOccurrenceReactivateButton
+          cancellationId={nextCancellation.id}
+          occurrenceDate={nextOccurrenceDate}
+          groupName={schedule.groups.name}
+          weekday={schedule.weekday}
+          startTime={schedule.start_time}
+          endTime={schedule.end_time}
+          location={schedule.location}
+          expired={isScheduleOccurrencePast(nextOccurrenceDate, schedule.end_time)}
+        />
+      </div>
+    </div>}
+    {!schedule.is_extra && !nextCancellation && <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <span><strong className="block text-sm text-amber-950">Yalnız növbəti dərsi ləğv et</strong><span className="mt-1 block text-xs leading-5 text-amber-800">Növbəti dərs baş tutmayacaq, amma həftəlik vaxt cədvəldə qalacaq və gələn həftə yenidən davam edəcək.</span></span>
         <button type="button" onClick={() => setConfirmation("occurrence")} disabled={occurrencePending || cancelPending} className="focus-ring shrink-0 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60">{occurrencePending ? "Ləğv edilir..." : "Yalnız növbəti dərsi ləğv et"}</button>
