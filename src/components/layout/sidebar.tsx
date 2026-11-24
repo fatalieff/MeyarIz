@@ -16,6 +16,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   GraduationCap,
+  Layers3,
   LayoutDashboard,
   Medal,
   Settings,
@@ -49,6 +50,7 @@ const teacherSections: NavSection[] = [
     title: "Maliyyə",
     items: [
       ["/dashboard/payments", "Ödənişlər", WalletCards],
+      ["/plans", "Abunəlik planları", Layers3],
     ],
   },
   {

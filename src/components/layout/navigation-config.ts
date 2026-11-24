@@ -1,10 +1,11 @@
-import { BarChart3, CalendarDays, ClipboardCheck, GraduationCap, LayoutDashboard, Medal, Settings, Sigma, Users, WalletCards } from "lucide-react";
+import { BarChart3, CalendarDays, ClipboardCheck, GraduationCap, Layers3, LayoutDashboard, Medal, Settings, Sigma, Users, WalletCards } from "lucide-react";
 
 export const teacherNav = [
   ["/dashboard", "İdarəetmə paneli", LayoutDashboard],
   ["/dashboard/groups", "Qruplar", GraduationCap],
   ["/dashboard/students", "Şagirdlər", Users],
   ["/dashboard/payments", "Ödənişlər", WalletCards],
+  ["/plans", "Abunəlik planları", Layers3],
   ["/dashboard/schedule", "Dərs cədvəli", CalendarDays],
   ["/dashboard/exams", "Sınaqlar", ClipboardCheck],
   ["/dashboard/rankings", "Ümumi reytinq", Medal],
